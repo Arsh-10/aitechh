@@ -1,0 +1,14 @@
+# What NOT to upload to Cloud Build. Keep source, drop heavy/secret local files.
+.git
+.gitignore
+.claude
+**/__pycache__
+**/*.pyc
+backend/.venv
+backend/.env
+frontend/node_modules
+frontend/dist
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+# NOTE: frontend/.env.production IS uploaded (public build-time config).
