@@ -23,7 +23,8 @@ reflect. A new mini-app ships roughly every week.
   loneliness, low mood, relationship conflict) and shifts tone, pacing, and technique to match.
 - 🆘 **Crisis-aware & region-aware** — detects crisis language and always surfaces concrete
   helplines (UAE / US / UK / local).
-- 🔊 **Read aloud** — natural OpenAI text-to-speech, with a free browser-speech fallback.
+- 🔊 **Read aloud** — free, on-device voice (browser Web Speech API) with adjustable speed
+  (1× / 1.25× / 1.5× / 2×) and voice selection. No API key, no server, no per-use cost.
 - 🙂 **Mood check-ins** — a quick before/after each session.
 - 🧠 **Evolving memory** — builds a private profile so it remembers you across sessions
   (viewable and clearable in Settings).
@@ -51,7 +52,7 @@ aitech/
 - **Chat** streams from OpenAI to your browser via Server-Sent Events; history + mood + memory
   are saved to Supabase so you can pick up where you left off.
 - **Cost is tiny** — a full reflection session on `gpt-4o-mini` costs the user roughly a cent
-  or two; adding voice pushes it to a few cents. You pay nothing for their usage.
+  or two. Voice is free (on-device). You pay nothing for their usage.
 
 ### Key API routes
 | Route | Purpose |
@@ -60,7 +61,6 @@ aitech/
 | `PUT/GET/DELETE /api/keys` | Manage the encrypted OpenAI key |
 | `POST /api/chat` | Streaming chat (detects mode + crisis) |
 | `POST /api/chat/wrap/{id}` | End-of-session takeaway, emotion, memory update |
-| `POST /api/chat/tts` | Text-to-speech (MP3) |
 | `POST /api/mood` | Save a mood check-in |
 | `GET/DELETE /api/memory` | View / clear what the companion remembers |
 | `GET /api/insights` | Dashboard data |
@@ -182,4 +182,4 @@ This project touches sensitive territory. If you deploy it:
 
 ---
 
-*A personal, open-source project — built for people, not affiliated with any employer.*
+*A personal, open-source project — built for people.*

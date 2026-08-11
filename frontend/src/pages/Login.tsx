@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/Logo'
+import { Orb } from '@/components/Orb'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -41,13 +42,27 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-secondary/30 px-4">
-      <Link to="/" className="mb-6">
-        <Logo className="text-xl" />
-      </Link>
-      <Card className="w-full max-w-sm">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-secondary/30 px-4">
+      {/* soft aurora glow behind the card */}
+      <div
+        className="animate-breathe pointer-events-none absolute h-[36rem] w-[36rem] rounded-full opacity-30 blur-3xl"
+        style={{
+          background:
+            'radial-gradient(circle, hsl(var(--aurora-1) / 0.6), hsl(var(--aurora-2) / 0.3) 50%, transparent 70%)',
+        }}
+        aria-hidden="true"
+      />
+      <div className="relative mb-6 flex flex-col items-center">
+        <Orb size={72} />
+        <Link to="/" className="mt-3">
+          <Logo className="text-xl" />
+        </Link>
+      </div>
+      <Card className="relative w-full max-w-sm shadow-lift">
         <CardHeader>
-          <CardTitle>{mode === 'signin' ? 'Welcome back' : 'Create your account'}</CardTitle>
+          <CardTitle className="font-display text-2xl font-medium">
+            {mode === 'signin' ? 'Welcome back' : 'Create your account'}
+          </CardTitle>
           <CardDescription>
             {mode === 'signin'
               ? 'Sign in to open your mini-apps.'

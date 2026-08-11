@@ -3,7 +3,7 @@ and persists conversation history in Supabase."""
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import StreamingResponse
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
@@ -115,11 +115,8 @@ MODE_LABELS: dict[str, str] = {
 
 DEFAULT_MODEL = "gpt-4o-mini"
 
-# Text-to-speech. gpt-4o-mini-tts is cheap (~$0.015 / reply) and natural;
-# "coral" is a warm, gentle voice that suits a reflection companion.
-TTS_MODEL = "gpt-4o-mini-tts"
-TTS_VOICE = "coral"
-TTS_MAX_CHARS = 4000  # guard against runaway cost on very long messages
+# Note: text-to-speech is handled entirely on the client via the browser's free
+# Web Speech API (see frontend/src/lib/tts.ts). No server TTS, no per-use cost.
 
 # One cheap structured call at the end of a session that produces a takeaway,
 # tags the primary emotion, and evolves the user's private memory profile.
@@ -143,11 +140,6 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1)
     conversation_id: str | None = None
     model: str = DEFAULT_MODEL
-
-
-class TTSRequest(BaseModel):
-    text: str = Field(min_length=1)
-    voice: str = TTS_VOICE
 
 
 def _load_memory(user_id: str) -> dict:
@@ -312,26 +304,6 @@ async def chat(body: ChatRequest, user=Depends(current_user)):
             yield f"data: {json.dumps({'done': True})}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
-
-
-@router.post("/tts")
-async def text_to_speech(body: TTSRequest, user=Depends(current_user)):
-    """Synthesise speech for a reply using the user's own OpenAI key.
-    Returns MP3 audio bytes. The frontend falls back to the browser's built-in
-    speech synthesis if this fails (e.g. the user's key lacks TTS access)."""
-    client = _user_openai_client(user.id)
-    text = body.text.strip()[:TTS_MAX_CHARS]
-    try:
-        speech = client.audio.speech.create(
-            model=TTS_MODEL,
-            voice=body.voice or TTS_VOICE,
-            input=text,
-            response_format="mp3",
-        )
-        audio = speech.content  # raw MP3 bytes
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Text-to-speech failed: {exc}")
-    return Response(content=audio, media_type="audio/mpeg")
 
 
 class WrapResult(BaseModel):

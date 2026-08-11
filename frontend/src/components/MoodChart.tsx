@@ -32,6 +32,17 @@ export function MoodChart({ points }: { points: Point[] }) {
   return (
     <div className="w-full overflow-x-auto">
       <svg viewBox={`0 0 ${W} ${H}`} className="h-40 w-full min-w-[420px]" role="img" aria-label="Mood trend">
+        <defs>
+          <linearGradient id="moodStroke" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="hsl(var(--aurora-1))" />
+            <stop offset="60%" stopColor="hsl(var(--aurora-2))" />
+            <stop offset="100%" stopColor="hsl(var(--gold))" />
+          </linearGradient>
+          <linearGradient id="moodArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="hsl(var(--aurora-1) / 0.25)" />
+            <stop offset="100%" stopColor="hsl(var(--aurora-1) / 0)" />
+          </linearGradient>
+        </defs>
         {/* gridlines for scores 1..5 */}
         {[1, 2, 3, 4, 5].map((s) => (
           <g key={s}>
@@ -48,17 +59,17 @@ export function MoodChart({ points }: { points: Point[] }) {
             </text>
           </g>
         ))}
-        <polygon points={area} fill="hsl(var(--primary))" opacity="0.12" />
+        <polygon points={area} fill="url(#moodArea)" />
         <polyline
           points={line}
           fill="none"
-          stroke="hsl(var(--primary))"
-          strokeWidth="2.5"
+          stroke="url(#moodStroke)"
+          strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         {points.map((p, i) => (
-          <circle key={i} cx={x(i)} cy={y(p.score)} r="3.5" fill="hsl(var(--primary))" />
+          <circle key={i} cx={x(i)} cy={y(p.score)} r="4" fill="hsl(var(--card))" stroke="hsl(var(--aurora-2))" strokeWidth="2.5" />
         ))}
       </svg>
     </div>

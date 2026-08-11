@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowLeft,
+  ArrowRight,
   BarChart3,
-  HeartHandshake,
   Loader2,
   LogOut,
+  Menu,
   Plus,
   Send,
   Settings,
@@ -24,8 +25,13 @@ import {
 } from '@/components/ui/dialog'
 import { ApiKeyForm, type KeyStatus } from '@/components/KeyManager'
 import { MemorySection } from '@/components/MemorySection'
+import { VoiceSettings } from '@/components/VoiceSettings'
+import { Markdown } from '@/components/Markdown'
 import { MoodPicker, type Mood } from '@/components/MoodPicker'
+import { Orb } from '@/components/Orb'
 import { SpeakButton } from '@/components/SpeakButton'
+import { ThemeToggle } from '@/components/ThemeToggle'
+import { TypingDots } from '@/components/TypingDots'
 import { apiGet, apiSend, saveMood, streamChat, wrapSession } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
@@ -54,7 +60,9 @@ export default function EmotionalSupport() {
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false) // mobile drawer
   const scrollRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Mood + session-wrap state.
   const [preMood, setPreMood] = useState<Mood | null>(null)
@@ -78,6 +86,14 @@ export default function EmotionalSupport() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages])
 
+  // Auto-grow the composer as the user types (capped by max-height).
+  useEffect(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+  }, [input])
+
   const refreshConversations = () => {
     apiGet<Conversation[]>('/api/chat/conversations')
       .then(setConversations)
@@ -88,6 +104,7 @@ export default function EmotionalSupport() {
     setActiveId(id)
     setPreMood(null)
     setModeLabel(null)
+    setSidebarOpen(false)
     try {
       const data = await apiGet<{ messages: Message[] }>(`/api/chat/conversations/${id}`)
       setMessages(data.messages)
@@ -102,6 +119,7 @@ export default function EmotionalSupport() {
     setInput('')
     setPreMood(null)
     setModeLabel(null)
+    setSidebarOpen(false)
   }
 
   const deleteConversation = async (id: string, e: React.MouseEvent) => {
@@ -213,15 +231,13 @@ export default function EmotionalSupport() {
   if (!keyStatus.has_key) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-secondary/30 px-4">
-        <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-sm">
-          <div className="mb-4 flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <HeartHandshake className="h-5 w-5" />
-            </span>
-            <div>
-              <h1 className="font-semibold">Add your OpenAI key</h1>
-              <p className="text-sm text-muted-foreground">One-time setup to start chatting.</p>
-            </div>
+        <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-lift">
+          <div className="mb-6 flex flex-col items-center text-center">
+            <Orb size={96} />
+            <h1 className="font-display mt-2 text-2xl font-medium">Add your OpenAI key</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              A one-time setup, then you're in. It's encrypted and only ever used for you.
+            </p>
           </div>
           <ApiKeyForm status={keyStatus} onChange={setKeyStatus} />
           <Link
@@ -237,8 +253,22 @@ export default function EmotionalSupport() {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <aside className="hidden w-72 shrink-0 flex-col border-r bg-secondary/30 md:flex">
+      {/* Mobile overlay behind the drawer */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      {/* Sidebar — static column on desktop, fixed drawer on mobile.
+          Uses hidden/fixed rather than transforms for reliability. */}
+      <aside
+        className={cn(
+          'w-72 shrink-0 flex-col border-r bg-secondary/30',
+          'md:static md:z-auto md:flex', // desktop: always a visible static column
+          sidebarOpen ? 'fixed inset-y-0 left-0 z-40 flex' : 'hidden'
+        )}
+      >
         <div className="flex items-center justify-between p-4">
           <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> aitech
@@ -249,7 +279,7 @@ export default function EmotionalSupport() {
         </div>
         <div className="px-3 pb-2">
           <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-            <Link to="/app/emotional-support/insights">
+            <Link to="/app/emotional-support/insights" onClick={() => setSidebarOpen(false)}>
               <BarChart3 className="h-4 w-4" /> Your insights
             </Link>
           </Button>
@@ -292,11 +322,15 @@ export default function EmotionalSupport() {
               <div className="max-h-[70vh] space-y-6 overflow-y-auto">
                 <ApiKeyForm status={keyStatus} onChange={setKeyStatus} />
                 <div className="border-t pt-5">
+                  <VoiceSettings open={settingsOpen} />
+                </div>
+                <div className="border-t pt-5">
                   <MemorySection open={settingsOpen} />
                 </div>
               </div>
             </DialogContent>
           </Dialog>
+          <ThemeToggle />
           <Button variant="ghost" size="sm" onClick={signOut}>
             <LogOut className="h-4 w-4" />
           </Button>
@@ -304,7 +338,18 @@ export default function EmotionalSupport() {
       </aside>
 
       {/* Chat area */}
-      <main className="flex flex-1 flex-col">
+      <main className="flex min-w-0 flex-1 flex-col">
+        {/* Mobile header — hamburger to open the drawer */}
+        <div className="flex items-center gap-3 border-b p-3 md:hidden">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open menu"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <span className="font-semibold">Reflection Companion</span>
+        </div>
         {/* Top bar: adaptive-mode indicator + end-session action */}
         {activeId && messages.length > 0 && (
           <div className="flex items-center justify-between border-b px-4 py-2">
@@ -330,12 +375,12 @@ export default function EmotionalSupport() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-2xl px-4 py-6">
             {messages.length === 0 ? (
-              <div className="mt-16 text-center">
-                <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-                  <HeartHandshake className="h-7 w-7" />
-                </span>
-                <h2 className="text-xl font-semibold">How are you, really?</h2>
-                <p className="mt-2 text-muted-foreground">
+              <div className="mt-10 text-center">
+                <div className="mx-auto mb-2 flex justify-center">
+                  <Orb size={120} />
+                </div>
+                <h2 className="font-display text-3xl font-medium">How are you, really?</h2>
+                <p className="mx-auto mt-3 max-w-sm text-muted-foreground">
                   This is a private space to slow down and reflect. Start where you are.
                 </p>
 
@@ -350,14 +395,15 @@ export default function EmotionalSupport() {
                   )}
                 </div>
 
-                <div className="mx-auto mt-6 flex max-w-md flex-col gap-2">
+                <div className="mx-auto mt-7 flex max-w-md flex-col gap-2.5">
                   {SUGGESTIONS.map((s) => (
                     <button
                       key={s}
                       onClick={() => send(s)}
-                      className="rounded-lg border bg-card px-4 py-2.5 text-left text-sm hover:bg-accent"
+                      className="group flex items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 text-left text-sm shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lift"
                     >
-                      {s}
+                      <span>{s}</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary" />
                     </button>
                   ))}
                 </div>
@@ -377,13 +423,23 @@ export default function EmotionalSupport() {
                     >
                       <div
                         className={cn(
-                          'max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm',
+                          'max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
                           m.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-secondary text-secondary-foreground'
+                            ? 'whitespace-pre-wrap rounded-br-md bg-primary text-primary-foreground shadow-soft'
+                            : 'rounded-bl-md border bg-card text-card-foreground shadow-soft'
                         )}
                       >
-                        {m.content || (isStreamingThis ? '…' : '')}
+                        {m.role === 'assistant' ? (
+                          m.content ? (
+                            <Markdown>{m.content}</Markdown>
+                          ) : isStreamingThis ? (
+                            <TypingDots />
+                          ) : (
+                            ''
+                          )
+                        ) : (
+                          m.content
+                        )}
                       </div>
                       {/* Read-aloud, ChatGPT-style, on finished assistant replies */}
                       {m.role === 'assistant' && m.content && !isStreamingThis && (
@@ -404,9 +460,10 @@ export default function EmotionalSupport() {
               e.preventDefault()
               send(input)
             }}
-            className="mx-auto flex max-w-2xl items-end gap-2"
+            className="mx-auto flex max-w-2xl items-end gap-2 rounded-3xl border bg-card p-2 pl-4 shadow-soft transition-shadow focus-within:shadow-lift focus-within:ring-2 focus-within:ring-ring/40"
           >
             <Textarea
+              ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
@@ -417,12 +474,20 @@ export default function EmotionalSupport() {
               }}
               placeholder="Type what's on your mind…"
               rows={1}
-              className="max-h-40"
+              className="max-h-40 resize-none border-0 bg-transparent p-0 py-2.5 shadow-none focus-visible:ring-0"
             />
-            <Button type="submit" size="icon" disabled={streaming || !input.trim()}>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={streaming || !input.trim()}
+              className="h-10 w-10 shrink-0 rounded-full"
+            >
               <Send className="h-4 w-4" />
             </Button>
           </form>
+          <p className="mx-auto mt-2 max-w-2xl px-1 text-center text-[11px] text-muted-foreground/70">
+            Press Enter to send · Shift+Enter for a new line
+          </p>
         </div>
       </main>
 
@@ -430,7 +495,7 @@ export default function EmotionalSupport() {
       <Dialog open={wrapOpen} onOpenChange={setWrapOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Before you go</DialogTitle>
+            <DialogTitle className="font-display text-xl">Before you go</DialogTitle>
             <DialogDescription>A moment to close this session.</DialogDescription>
           </DialogHeader>
 

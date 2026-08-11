@@ -9,6 +9,15 @@ export default {
       screens: { '2xl': '1200px' },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+      },
+      boxShadow: {
+        soft: '0 1px 2px rgba(24,20,40,0.04), 0 8px 24px -12px rgba(24,20,40,0.12)',
+        lift: '0 2px 4px rgba(24,20,40,0.05), 0 24px 48px -20px rgba(24,20,40,0.25)',
+        glow: '0 0 0 1px rgba(255,255,255,0.06), 0 20px 60px -20px rgba(124,92,255,0.5)',
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
