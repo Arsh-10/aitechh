@@ -233,3 +233,8 @@ frontend/node_modules/
 # ---- Deployment ----
 backend/static/
 env.deploy.yaml
+
+# The generic Python 'lib/' rule above is too broad — the FRONTEND has real
+# source under src/lib. Make sure it is tracked.
+!frontend/src/lib/
+!frontend/src/lib/**

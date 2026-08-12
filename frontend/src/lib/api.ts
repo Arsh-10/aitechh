@@ -1,0 +1,147 @@
+import { supabase } from './supabase'
+
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+
+/** Return a valid access token, refreshing it first if it's expired/near-expiry. */
+async function authHeader(): Promise<Record<string, string>> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session) return {}
+  let token = session.access_token
+  const expiresAt = (session.expires_at ?? 0) * 1000
+  if (expiresAt && expiresAt - Date.now() < 60_000) {
+    // Token expired or about to — refresh proactively.
+    const { data } = await supabase.auth.refreshSession()
+    token = data.session?.access_token ?? token
+  }
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+let redirecting = false
+/** On an auth failure, sign out and send the user to login (not the key-gate). */
+async function handleUnauthorized() {
+  if (redirecting) return
+  redirecting = true
+  try {
+    await supabase.auth.signOut()
+  } catch {
+    /* ignore */
+  }
+  if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+    window.location.assign('/login')
+  }
+}
+
+async function fail(res: Response): Promise<never> {
+  if (res.status === 401) await handleUnauthorized()
+  const detail = (await res.json().catch(() => ({}))).detail ?? res.statusText
+  throw new Error(detail)
+}
+
+export async function apiGet<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_URL}${path}`, {
+    headers: { ...(await authHeader()) },
+  })
+  if (!res.ok) return fail(res)
+  return res.json()
+}
+
+export async function apiSend<T>(
+  path: string,
+  method: 'POST' | 'PUT' | 'DELETE',
+  body?: unknown
+): Promise<T | null> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) return fail(res)
+  if (res.status === 204) return null
+  return res.json()
+}
+
+/**
+ * Stream a chat reply via Server-Sent Events.
+ * onEvent receives parsed frames: {conversation_id} | {delta} | {error} | {done}.
+ */
+export async function streamChat(
+  body: { message: string; conversation_id?: string | null },
+  onEvent: (e: {
+    conversation_id?: string
+    mode?: string
+    mode_label?: string
+    delta?: string
+    error?: string
+    done?: boolean
+  }) => void
+): Promise<void> {
+  const res = await fetch(`${API_URL}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok || !res.body) {
+    if (res.status === 401) await handleUnauthorized()
+    throw new Error((await res.json().catch(() => ({}))).detail ?? res.statusText)
+  }
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const parts = buffer.split('\n\n')
+    buffer = parts.pop() ?? ''
+    for (const part of parts) {
+      const line = part.trim()
+      if (!line.startsWith('data:')) continue
+      try {
+        onEvent(JSON.parse(line.slice(5).trim()))
+      } catch {
+        // ignore malformed frame
+      }
+    }
+  }
+}
+
+// ── v1.1: mood, memory, insights ──────────────────────────────
+export interface Insights {
+  total_sessions: number
+  streak_days: number
+  mood_trend: { date: string; score: number }[]
+  avg_mood_delta: number | null
+  top_emotions: { emotion: string; count: number }[]
+  themes: string[]
+  recent_takeaways: { date: string; takeaway: string }[]
+  memory_summary: string
+}
+
+export interface Memory {
+  summary: string
+  themes: string[]
+  updated_at: string | null
+}
+
+export const saveMood = (body: {
+  conversation_id?: string | null
+  phase: 'pre' | 'post'
+  score: number
+  label?: string
+}) => apiSend('/api/mood', 'POST', body)
+
+export const wrapSession = (conversationId: string) =>
+  apiSend<{ takeaway: string | null; primary_emotion: string | null }>(
+    `/api/chat/wrap/${conversationId}`,
+    'POST'
+  )
+
+export const getInsights = () => apiGet<Insights>('/api/insights')
+export const getMemory = () => apiGet<Memory>('/api/memory')
+export const clearMemory = () => apiSend('/api/memory', 'DELETE')
+
+export { API_URL }
