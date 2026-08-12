@@ -252,7 +252,7 @@ export default function EmotionalSupport() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-[100dvh] bg-background">
       {/* Mobile overlay behind the drawer */}
       {sidebarOpen && (
         <div

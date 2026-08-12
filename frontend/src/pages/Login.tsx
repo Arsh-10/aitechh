@@ -26,7 +26,7 @@ export default function Login() {
     try {
       if (mode === 'signin') {
         await signIn(email, password)
-        navigate('/app/emotional-support')
+        navigate('/')
       } else {
         await signUp(email, password)
         setNotice(
