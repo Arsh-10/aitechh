@@ -104,3 +104,31 @@ create policy "own moods" on public.mood_checkins
 drop policy if exists "own memory" on public.user_memory;
 create policy "own memory" on public.user_memory
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- ═════════════════════════════════════════════════════════════
+-- Decision Assistant (2nd mini-app).
+-- (Also available standalone as migrations/003_decision_assistant.sql.)
+-- ═════════════════════════════════════════════════════════════
+alter table public.conversations
+  add column if not exists app text not null default 'emotional-support';
+create index if not exists conversations_app_idx
+  on public.conversations (user_id, app, created_at desc);
+
+create table if not exists public.decisions (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null references auth.users (id) on delete cascade,
+  conversation_id uuid references public.conversations (id) on delete set null,
+  title           text not null default 'Untitled decision',
+  card            jsonb,
+  outcome         text,
+  outcome_rating  int check (outcome_rating between 1 and 5),
+  created_at      timestamptz not null default now(),
+  revisited_at    timestamptz
+);
+create index if not exists decisions_user_idx
+  on public.decisions (user_id, created_at desc);
+
+alter table public.decisions enable row level security;
+drop policy if exists "own decisions" on public.decisions;
+create policy "own decisions" on public.decisions
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

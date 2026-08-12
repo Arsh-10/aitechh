@@ -220,14 +220,16 @@ def _user_openai_client(user_id: str) -> OpenAI:
     return OpenAI(api_key=api_key)
 
 
-def _ensure_conversation(user_id: str, conversation_id: str | None, first_message: str) -> str:
+def _ensure_conversation(
+    user_id: str, conversation_id: str | None, first_message: str, app: str = "emotional-support"
+) -> str:
     sb = service_client()
     if conversation_id:
         return conversation_id
     title = (first_message[:60] + "…") if len(first_message) > 60 else first_message
     res = (
         sb.table("conversations")
-        .insert({"user_id": user_id, "title": title})
+        .insert({"user_id": user_id, "title": title, "app": app})
         .execute()
     )
     return res.data[0]["id"]
@@ -388,6 +390,7 @@ async def list_conversations(user=Depends(current_user)):
         .table("conversations")
         .select("id, title, created_at")
         .eq("user_id", user.id)
+        .eq("app", "emotional-support")  # keep this app's history separate
         .order("created_at", desc=True)
         .execute()
     )

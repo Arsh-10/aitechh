@@ -41,7 +41,7 @@ export const MINI_APPS: MiniApp[] = [
     name: 'Decision Assistant',
     tagline: 'Think through hard choices with a structured process.',
     icon: Scale,
-    path: null,
-    status: 'soon',
+    path: '/app/decision',
+    status: 'live',
   },
 ]

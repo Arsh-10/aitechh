@@ -144,4 +144,74 @@ export const getInsights = () => apiGet<Insights>('/api/insights')
 export const getMemory = () => apiGet<Memory>('/api/memory')
 export const clearMemory = () => apiSend('/api/memory', 'DELETE')
 
+// ── Decision Assistant ────────────────────────────────────────
+export interface DecisionCard {
+  title: string
+  options: string[]
+  criteria: string[]
+  leaning: string
+  rationale: string
+  key_risk: string
+  confidence: number
+}
+export interface Decision {
+  id: string
+  conversation_id: string | null
+  title: string
+  card: DecisionCard | null
+  outcome: string | null
+  outcome_rating: number | null
+  created_at: string
+  revisited_at: string | null
+}
+
+export const listDecisions = () => apiGet<Decision[]>('/api/decisions')
+export const getDecision = (id: string) =>
+  apiGet<{ decision: Decision; messages: { role: 'user' | 'assistant'; content: string }[] }>(
+    `/api/decisions/${id}`
+  )
+export const wrapDecision = (conversationId: string) =>
+  apiSend<{ id: string; title: string; card: DecisionCard }>(
+    `/api/decisions/wrap/${conversationId}`,
+    'POST'
+  )
+export const recordOutcome = (id: string, body: { outcome: string; rating?: number }) =>
+  apiSend(`/api/decisions/${id}/outcome`, 'POST', body)
+export const deleteDecision = (id: string) => apiSend(`/api/decisions/${id}`, 'DELETE')
+
+/** Stream the decision coach reply (same SSE shape as chat). */
+export async function streamDecisionChat(
+  body: { message: string; conversation_id?: string | null },
+  onEvent: (e: { conversation_id?: string; delta?: string; error?: string; done?: boolean }) => void
+): Promise<void> {
+  const res = await fetch(`${API_URL}/api/decisions/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok || !res.body) {
+    if (res.status === 401) await handleUnauthorized()
+    throw new Error((await res.json().catch(() => ({}))).detail ?? res.statusText)
+  }
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const parts = buffer.split('\n\n')
+    buffer = parts.pop() ?? ''
+    for (const part of parts) {
+      const line = part.trim()
+      if (!line.startsWith('data:')) continue
+      try {
+        onEvent(JSON.parse(line.slice(5).trim()))
+      } catch {
+        /* ignore malformed frame */
+      }
+    }
+  }
+}
+
 export { API_URL }
