@@ -80,9 +80,27 @@ without this, but it's good hygiene and needed if you enable email links later.)
 
 ## Updating later
 
+Just **push to `main`** — CI/CD deploys automatically (see below). To deploy
+manually instead:
+
 ```bash
 gcloud run deploy aitech --source . --region europe-west1 --allow-unauthenticated --env-vars-file env.deploy.yaml --memory 512Mi
 ```
+
+## CI/CD (GitHub Actions → Cloud Run)
+
+Every push to `main` runs [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
+1. **CI** — installs + typechecks + builds the frontend, and import-checks the backend.
+2. **CD** — deploys to Cloud Run (only on push to `main`).
+
+Auth is **keyless** via Workload Identity Federation — no service-account JSON is
+stored in GitHub. Backend env vars already live on the Cloud Run service and are
+**preserved across deploys**, so no secrets are needed in the pipeline. Pull
+requests run CI only (no deploy).
+
+One-time GCP setup (already done for this project): a `github-deployer` service
+account with `run.admin` + build/storage/artifact roles, a `github-pool`
+workload-identity pool, and a GitHub OIDC provider restricted to `Arsh-10/aitechh`.
 
 ## Troubleshooting
 
