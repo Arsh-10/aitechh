@@ -6,30 +6,40 @@ aitech is a small, growing collection of focused AI tools built to help with rea
 Each app is open source, and you run it with your **own** OpenAI API key — so your data and
 your costs stay yours.
 
-The first app is a **Reflection Companion**: a private, judgement-free space to slow down and
-reflect. A new mini-app ships roughly every week.
+A new mini-app ships roughly every week. **Three are live today:**
 
-> ⚠️ **Not medical advice.** The Reflection Companion is a supportive journaling/reflection
-> tool — **not** a therapist, doctor, or a substitute for professional care. If you are in
-> crisis, contact your local emergency services (e.g. UAE 998 / 800-HOPE, US 988, UK 116 123).
+- 🧠 **Reflection Companion** — a private, judgement-free space to slow down and reflect.
+- 🧭 **Decision Assistant** — think through hard choices with a structured coach, save a
+  "decision card", and revisit later to record what actually happened.
+- 🎓 **Study Companion** — turn any material into active-recall flashcards with spaced-repetition
+  scheduling, plus a tutor grounded in your material.
+
+> ⚠️ **Not professional advice.** These are supportive/learning tools — not a therapist, doctor,
+> lawyer, or financial adviser. The Reflection Companion is crisis-aware and surfaces real
+> helplines (e.g. UAE 998 / 800-HOPE, US 988, UK 116 123), but is not a substitute for
+> professional care.
 
 ---
 
-## Features (Reflection Companion)
+## Features
 
+**Shared across every app**
 - 🔐 **Bring your own OpenAI key** — encrypted at rest, never stored in plaintext, deletable any time.
-- 💬 **Streaming chat** with a warm, non-clinical reflection companion.
-- 🎯 **Adaptive support modes** — detects the situation (heartbreak, work stress, anxiety,
-  loneliness, low mood, relationship conflict) and shifts tone, pacing, and technique to match.
-- 🆘 **Crisis-aware & region-aware** — detects crisis language and always surfaces concrete
-  helplines (UAE / US / UK / local).
+- 💬 **Streaming chat** with per-app, purpose-built system prompts.
 - 🔊 **Read aloud** — free, on-device voice (browser Web Speech API) with adjustable speed
   (1× / 1.25× / 1.5× / 2×) and voice selection. No API key, no server, no per-use cost.
-- 🙂 **Mood check-ins** — a quick before/after each session.
-- 🧠 **Evolving memory** — builds a private profile so it remembers you across sessions
-  (viewable and clearable in Settings).
-- 📊 **"You" dashboard** — mood trend, streak, before→after shift, recurring emotions & themes,
-  and your recent takeaways.
+- 🌗 **Light/dark theme**, mobile-friendly, and a signature "breathing orb" identity.
+
+**Reflection Companion** — adaptive support modes (detects heartbreak / work stress / anxiety /
+loneliness / low mood / conflict and shifts tone & technique), region-aware crisis handling,
+mood check-ins, an evolving private memory, and a "You" dashboard (mood trend, streak, themes,
+takeaways).
+
+**Decision Assistant** — a structured decision coach (options incl. status quo, your own criteria,
+trade-offs, bias-spotting, regret-minimization), a saved decision card, and an outcome-revisit loop.
+
+**Study Companion** — auto-generates atomic active-recall cards from your material, schedules
+reviews with an SM-2-style spaced-repetition algorithm, and offers a tutor grounded in your notes.
 
 ---
 
@@ -64,6 +74,8 @@ aitech/
 | `POST /api/mood` | Save a mood check-in |
 | `GET/DELETE /api/memory` | View / clear what the companion remembers |
 | `GET /api/insights` | Dashboard data |
+| `POST /api/decisions/chat` · `…/wrap/{id}` · `…/{id}/outcome` | Decision coach, decision card, outcome revisit |
+| `POST /api/study/generate` · `…/tutor` · `…/cards/{id}/review` | Generate cards, grounded tutor, SM-2 review |
 
 ---
 

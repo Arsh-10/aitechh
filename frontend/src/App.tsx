@@ -6,6 +6,7 @@ import Login from './pages/Login'
 import EmotionalSupport from './pages/EmotionalSupport'
 import Insights from './pages/Insights'
 import DecisionAssistant from './pages/DecisionAssistant'
+import StudyCompanion from './pages/StudyCompanion'
 import Preview from './pages/Preview' // TEMP: visual QA route, remove before ship
 
 function Protected({ children }: { children: ReactNode }) {
@@ -48,6 +49,14 @@ export default function App() {
         element={
           <Protected>
             <DecisionAssistant />
+          </Protected>
+        }
+      />
+      <Route
+        path="/app/study"
+        element={
+          <Protected>
+            <StudyCompanion />
           </Protected>
         }
       />

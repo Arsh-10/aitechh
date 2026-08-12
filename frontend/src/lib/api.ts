@@ -214,4 +214,73 @@ export async function streamDecisionChat(
   }
 }
 
+// ── Study Companion ───────────────────────────────────────────
+export interface StudyDeck {
+  id: string
+  title: string
+  created_at: string
+  card_count?: number
+  due_count?: number
+  source_text?: string
+}
+export interface StudyCard {
+  id: string
+  question: string
+  answer: string
+  explanation: string | null
+  interval_days: number
+  reps: number
+  due_at: string
+}
+export type Grade = 'again' | 'hard' | 'good' | 'easy'
+
+export const generateDeck = (body: { material: string; title?: string; count?: number }) =>
+  apiSend<{ deck: StudyDeck; count: number }>('/api/study/generate', 'POST', body)
+export const listDecks = () => apiGet<StudyDeck[]>('/api/study/decks')
+export const getDeck = (id: string) =>
+  apiGet<{ deck: StudyDeck; cards: StudyCard[] }>(`/api/study/decks/${id}`)
+export const dueCards = (deckId: string) => apiGet<StudyCard[]>(`/api/study/decks/${deckId}/due`)
+export const reviewCard = (cardId: string, grade: Grade) =>
+  apiSend<{ ok: boolean; due_at: string; interval_days: number }>(
+    `/api/study/cards/${cardId}/review`,
+    'POST',
+    { grade }
+  )
+export const deleteDeck = (id: string) => apiSend(`/api/study/decks/${id}`, 'DELETE')
+
+/** Stream the study tutor reply (grounded in the deck's material). */
+export async function streamStudyTutor(
+  body: { message: string; conversation_id?: string | null; deck_id?: string | null },
+  onEvent: (e: { conversation_id?: string; delta?: string; error?: string; done?: boolean }) => void
+): Promise<void> {
+  const res = await fetch(`${API_URL}/api/study/tutor`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok || !res.body) {
+    if (res.status === 401) await handleUnauthorized()
+    throw new Error((await res.json().catch(() => ({}))).detail ?? res.statusText)
+  }
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const parts = buffer.split('\n\n')
+    buffer = parts.pop() ?? ''
+    for (const part of parts) {
+      const line = part.trim()
+      if (!line.startsWith('data:')) continue
+      try {
+        onEvent(JSON.parse(line.slice(5).trim()))
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+}
+
 export { API_URL }

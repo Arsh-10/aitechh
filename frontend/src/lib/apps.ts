@@ -33,8 +33,8 @@ export const MINI_APPS: MiniApp[] = [
     name: 'Study Companion',
     tagline: 'Turn any material into a tutor, quizzes and spaced repetition.',
     icon: GraduationCap,
-    path: null,
-    status: 'soon',
+    path: '/app/study',
+    status: 'live',
   },
   {
     slug: 'decision-ai',

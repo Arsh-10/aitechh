@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
-from .routers import chat, decisions, insights, keys
+from .routers import chat, decisions, insights, keys, study
 
 settings = get_settings()
 
@@ -34,6 +34,7 @@ app.include_router(keys.router)
 app.include_router(chat.router)
 app.include_router(insights.router)
 app.include_router(decisions.router)
+app.include_router(study.router)
 
 
 @app.get("/health", tags=["meta"])
