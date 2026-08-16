@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { HeartHandshake, MapPin, GraduationCap, Scale } from 'lucide-react'
+import { HeartHandshake, MapPin, GraduationCap, Scale, FileText } from 'lucide-react'
 
 export interface MiniApp {
   slug: string
@@ -42,6 +42,14 @@ export const MINI_APPS: MiniApp[] = [
     tagline: 'Think through hard choices with a structured process.',
     icon: Scale,
     path: '/app/decision',
+    status: 'live',
+  },
+  {
+    slug: 'contract-explainer',
+    name: 'Contract Explainer',
+    tagline: 'Understand what you sign — plain English, risks, and questions to ask.',
+    icon: FileText,
+    path: '/app/contract',
     status: 'live',
   },
 ]

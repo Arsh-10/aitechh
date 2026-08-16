@@ -283,4 +283,67 @@ export async function streamStudyTutor(
   }
 }
 
+// ── Contract / Document Explainer ─────────────────────────────
+export interface ContractAnalysis {
+  title: string
+  summary: string
+  key_points: string[]
+  red_flags: { clause: string; why: string }[]
+  questions: string[]
+}
+export interface ContractDoc {
+  id: string
+  title: string
+  data: ContractAnalysis | null
+  created_at: string
+  conversation_id: string | null
+}
+
+export const analyzeContract = (body: { text: string; title?: string }) =>
+  apiSend<{ id: string; title: string; analysis: ContractAnalysis }>(
+    '/api/contracts/analyze',
+    'POST',
+    body
+  )
+export const listContracts = () => apiGet<ContractDoc[]>('/api/contracts')
+export const getContract = (id: string) =>
+  apiGet<{ document: ContractDoc & { source_text?: string }; messages: { role: 'user' | 'assistant'; content: string }[] }>(
+    `/api/contracts/${id}`
+  )
+export const deleteContract = (id: string) => apiSend(`/api/contracts/${id}`, 'DELETE')
+
+export async function streamContractChat(
+  body: { message: string; conversation_id?: string | null; document_id?: string | null },
+  onEvent: (e: { conversation_id?: string; delta?: string; error?: string; done?: boolean }) => void
+): Promise<void> {
+  const res = await fetch(`${API_URL}/api/contracts/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok || !res.body) {
+    if (res.status === 401) await handleUnauthorized()
+    throw new Error((await res.json().catch(() => ({}))).detail ?? res.statusText)
+  }
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const parts = buffer.split('\n\n')
+    buffer = parts.pop() ?? ''
+    for (const part of parts) {
+      const line = part.trim()
+      if (!line.startsWith('data:')) continue
+      try {
+        onEvent(JSON.parse(line.slice(5).trim()))
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+}
+
 export { API_URL }
