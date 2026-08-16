@@ -26,6 +26,7 @@ import {
 import { ApiKeyForm, type KeyStatus } from '@/components/KeyManager'
 import { MemorySection } from '@/components/MemorySection'
 import { VoiceSettings } from '@/components/VoiceSettings'
+import { AuroraBackdrop } from '@/components/AuroraBackdrop'
 import { Markdown } from '@/components/Markdown'
 import { MoodPicker, type Mood } from '@/components/MoodPicker'
 import { Orb } from '@/components/Orb'
@@ -231,7 +232,7 @@ export default function EmotionalSupport() {
   if (!keyStatus.has_key) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-secondary/30 px-4">
-        <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-lift">
+        <div className="glass-panel w-full max-w-md rounded-2xl p-8">
           <div className="mb-6 flex flex-col items-center text-center">
             <Orb size={96} />
             <h1 className="font-display mt-2 text-2xl font-medium">Add your OpenAI key</h1>
@@ -252,7 +253,8 @@ export default function EmotionalSupport() {
   }
 
   return (
-    <div className="flex h-[100dvh] bg-background">
+    <div className="relative flex h-[100dvh]">
+      <AuroraBackdrop />
       {/* Mobile overlay behind the drawer */}
       {sidebarOpen && (
         <div
@@ -264,7 +266,7 @@ export default function EmotionalSupport() {
           Uses hidden/fixed rather than transforms for reliability. */}
       <aside
         className={cn(
-          'w-72 shrink-0 flex-col border-r bg-secondary/30',
+          'w-72 shrink-0 flex-col border-r border-border/50 bg-background/45 backdrop-blur-xl',
           'md:static md:z-auto md:flex', // desktop: always a visible static column
           sidebarOpen ? 'fixed inset-y-0 left-0 z-40 flex' : 'hidden'
         )}
@@ -385,7 +387,7 @@ export default function EmotionalSupport() {
                 </p>
 
                 {/* Arriving mood — optional, pairs with this session for your trend */}
-                <div className="mx-auto mt-8 max-w-md rounded-xl border bg-card p-4">
+                <div className="glass-panel mx-auto mt-8 max-w-md rounded-xl p-4">
                   <p className="mb-3 text-sm font-medium">How are you arriving today?</p>
                   <MoodPicker value={preMood?.score} onSelect={setPreMood} size="lg" />
                   {preMood && (
@@ -400,7 +402,7 @@ export default function EmotionalSupport() {
                     <button
                       key={s}
                       onClick={() => send(s)}
-                      className="group flex items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 text-left text-sm shadow-soft transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lift"
+                      className="glass-panel group flex items-center justify-between gap-3 rounded-2xl px-4 py-3 text-left text-sm transition-all hover:-translate-y-0.5 hover:shadow-lift"
                     >
                       <span>{s}</span>
                       <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-primary" />
@@ -426,7 +428,7 @@ export default function EmotionalSupport() {
                           'max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
                           m.role === 'user'
                             ? 'whitespace-pre-wrap rounded-br-md bg-primary text-primary-foreground shadow-soft'
-                            : 'rounded-bl-md border bg-card text-card-foreground shadow-soft'
+                            : 'glass-panel rounded-bl-md text-card-foreground'
                         )}
                       >
                         {m.role === 'assistant' ? (
@@ -460,7 +462,7 @@ export default function EmotionalSupport() {
               e.preventDefault()
               send(input)
             }}
-            className="mx-auto flex max-w-2xl items-end gap-2 rounded-3xl border bg-card p-2 pl-4 shadow-soft transition-shadow focus-within:shadow-lift focus-within:ring-2 focus-within:ring-ring/40"
+            className="glass-panel mx-auto flex max-w-2xl items-end gap-2 rounded-3xl p-2 pl-4 transition-shadow focus-within:shadow-lift focus-within:ring-2 focus-within:ring-ring/40"
           >
             <Textarea
               ref={textareaRef}

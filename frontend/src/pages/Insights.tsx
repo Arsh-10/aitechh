@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowLeft, Brain, Flame, MessageCircle, Sparkles, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MoodChart } from '@/components/MoodChart'
+import { AuroraBackdrop } from '@/components/AuroraBackdrop'
 import { Orb } from '@/components/Orb'
 import { getInsights, type Insights as InsightsData } from '@/lib/api'
 
@@ -80,8 +81,9 @@ export function InsightsView({
           : 'sessions dip a little'
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
+    <div className="relative min-h-screen">
+      <AuroraBackdrop />
+      <header className="sticky top-0 z-10 border-b border-border/60 glass">
         <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4">
           <Link
             to="/app/emotional-support"

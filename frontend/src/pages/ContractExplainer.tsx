@@ -25,6 +25,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ApiKeyForm, type KeyStatus } from '@/components/KeyManager'
+import { AuroraBackdrop } from '@/components/AuroraBackdrop'
 import { Markdown } from '@/components/Markdown'
 import { Orb } from '@/components/Orb'
 import { SpeakButton } from '@/components/SpeakButton'
@@ -177,7 +178,7 @@ export default function ContractExplainer() {
   if (!keyStatus.has_key)
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-secondary/30 px-4">
-        <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-lift">
+        <div className="glass-panel w-full max-w-md rounded-2xl p-8">
           <div className="mb-6 flex flex-col items-center text-center">
             <Orb size={96} />
             <h1 className="font-display mt-2 text-2xl font-medium">Add your OpenAI key</h1>
@@ -192,11 +193,12 @@ export default function ContractExplainer() {
     )
 
   return (
-    <div className="flex h-[100dvh] bg-background">
+    <div className="relative flex h-[100dvh]">
+      <AuroraBackdrop />
       {sidebarOpen && <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setSidebarOpen(false)} />}
       <aside
         className={cn(
-          'w-72 shrink-0 flex-col border-r bg-secondary/30',
+          'w-72 shrink-0 flex-col border-r border-border/50 bg-background/45 backdrop-blur-xl',
           'md:static md:z-auto md:flex',
           sidebarOpen ? 'fixed inset-y-0 left-0 z-40 flex' : 'hidden'
         )}
@@ -289,12 +291,12 @@ export default function ContractExplainer() {
                     flag the risky clauses, and give you questions to ask.
                   </p>
                 </div>
-                <div className="mx-auto mt-7 max-w-xl space-y-3">
+                <div className="glass-panel mx-auto mt-7 max-w-xl space-y-3 rounded-2xl p-6">
                   <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Title (optional) — e.g. Apartment lease, Job offer"
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="h-10 w-full rounded-md border border-input bg-background/60 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                   <Textarea
                     value={text}
@@ -311,7 +313,7 @@ export default function ContractExplainer() {
               </div>
             ) : mode === 'analysis' ? (
               <div className="space-y-5">
-                <div className="rounded-2xl border bg-card p-5 shadow-soft">
+                <div className="glass-panel rounded-2xl p-5">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">In plain English</p>
                   <p className="mt-1.5 leading-relaxed">{analysis.summary}</p>
                 </div>
@@ -376,7 +378,7 @@ export default function ContractExplainer() {
                               'max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed',
                               m.role === 'user'
                                 ? 'whitespace-pre-wrap rounded-br-md bg-primary text-primary-foreground shadow-soft'
-                                : 'rounded-bl-md border bg-card text-card-foreground shadow-soft'
+                                : 'glass-panel rounded-bl-md text-card-foreground'
                             )}
                           >
                             {m.role === 'assistant' ? (m.content ? <Markdown>{m.content}</Markdown> : streamingThis ? <TypingDots /> : '') : m.content}
@@ -396,7 +398,7 @@ export default function ContractExplainer() {
           <div className="border-t bg-background p-4">
             <form
               onSubmit={(e) => { e.preventDefault(); send(input) }}
-              className="mx-auto flex max-w-2xl items-end gap-2 rounded-3xl border bg-card p-2 pl-4 shadow-soft focus-within:ring-2 focus-within:ring-ring/40"
+              className="mx-auto flex max-w-2xl items-end gap-2 glass-panel rounded-3xl p-2 pl-4 focus-within:ring-2 focus-within:ring-ring/40"
             >
               <Textarea
                 value={input}

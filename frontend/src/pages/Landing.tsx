@@ -17,6 +17,7 @@ import {
 import { Logo } from '@/components/Logo'
 import { GitHubIcon } from '@/components/icons'
 import { Aurora } from '@/components/Aurora'
+import { AuroraBackdrop } from '@/components/AuroraBackdrop'
 import { Orb } from '@/components/Orb'
 import { Reveal } from '@/components/Reveal'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -32,7 +33,8 @@ export default function Landing() {
   const appHref = '/app/emotional-support'
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="relative min-h-screen">
+      <AuroraBackdrop />
       {/* ── Nav ────────────────────────────────────────────── */}
       <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 glass">
         <div className="container flex h-16 items-center justify-between">
@@ -153,7 +155,7 @@ export default function Landing() {
 
           {/* Mini chat mock */}
           <Reveal delay={120} className="flex justify-center">
-            <div className="w-full max-w-md rounded-3xl border bg-card p-5 shadow-lift">
+            <div className="glass-panel w-full max-w-md rounded-3xl p-5">
               <div className="mb-4 flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-1 text-xs text-accent-foreground">
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Untangling work stress
@@ -196,7 +198,7 @@ export default function Landing() {
             { n: '03', icon: Sparkles, t: 'Just start where you are', d: 'Say what’s on your mind. It meets you there — and remembers, so tomorrow picks up where you left off.' },
           ].map((s, i) => (
             <Reveal key={s.n} delay={i * 120}>
-              <div className="group h-full rounded-2xl border bg-card p-7 shadow-soft transition-shadow hover:shadow-lift">
+              <div className="group h-full rounded-2xl glass-panel p-7 transition-shadow hover:shadow-lift">
                 <div className="flex items-center justify-between">
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-primary">
                     <s.icon className="h-5 w-5" />
@@ -212,7 +214,7 @@ export default function Landing() {
       </section>
 
       {/* ── Feature bento ──────────────────────────────────── */}
-      <section id="features" className="border-y bg-secondary/40 py-24">
+      <section id="features" className="border-y bg-secondary/20 py-24">
         <div className="container">
           <Reveal className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-widest text-primary">Why it’s different</p>
@@ -285,7 +287,7 @@ export default function Landing() {
               { icon: Lock, t: 'Encrypted at rest', d: 'Never stored in plain text.' },
               { icon: GitHubIcon, t: 'Fully open source', d: 'Read it. Run it yourself.' },
             ].map((f) => (
-              <div key={f.t} className="rounded-2xl border bg-card p-5 shadow-soft">
+              <div key={f.t} className="rounded-2xl glass-panel p-5">
                 <f.icon className="h-5 w-5 text-primary" />
                 <p className="mt-3 font-medium">{f.t}</p>
                 <p className="text-sm text-muted-foreground">{f.d}</p>
@@ -296,7 +298,7 @@ export default function Landing() {
       </section>
 
       {/* ── Mini-apps ──────────────────────────────────────── */}
-      <section className="border-y bg-secondary/40 py-24">
+      <section className="border-y bg-secondary/20 py-24">
         <div className="container">
           <Reveal className="mx-auto max-w-2xl text-center">
             <p className="text-sm font-semibold uppercase tracking-widest text-primary">The collection</p>
@@ -311,8 +313,8 @@ export default function Landing() {
               const Icon = app.icon
               const card = (
                 <div className={cn(
-                  'group relative h-full overflow-hidden rounded-2xl border bg-card p-6 shadow-soft transition-all',
-                  app.path && 'hover:-translate-y-1 hover:shadow-lift'
+                  'group relative h-full overflow-hidden rounded-2xl glass-panel p-6 transition-all',
+                  app.status === 'live' && 'hover:-translate-y-1 hover:shadow-lift'
                 )}>
                   <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-primary">
                     <Icon className="h-5 w-5" />
@@ -335,7 +337,7 @@ export default function Landing() {
               )
               return (
                 <Reveal key={app.slug} delay={i * 70} className="h-full">
-                  {app.path ? <Link to={app.path} className="block h-full">{card}</Link> : <div className="h-full opacity-70">{card}</div>}
+                  {app.path && app.status === 'live' ? <Link to={app.path} className="block h-full">{card}</Link> : <div className="h-full opacity-70">{card}</div>}
                 </Reveal>
               )
             })}
@@ -356,7 +358,7 @@ export default function Landing() {
       </section>
 
       {/* ── FAQ ────────────────────────────────────────────── */}
-      <section className="border-t bg-secondary/40 py-24">
+      <section className="border-t bg-secondary/20 py-24">
         <div className="container mx-auto max-w-2xl">
           <Reveal className="text-center">
             <h2 className="font-display text-3xl font-medium md:text-4xl">Good questions</h2>
@@ -415,7 +417,7 @@ function BentoCard({
   return (
     <div
       className={cn(
-        'flex h-full flex-col rounded-2xl border bg-card p-7 shadow-soft transition-shadow hover:shadow-lift',
+        'flex h-full flex-col rounded-2xl glass-panel p-7 transition-shadow hover:shadow-lift',
         accent && 'bg-gradient-to-br from-card to-accent/40'
       )}
     >
@@ -451,7 +453,7 @@ const FAQS = [
 function Faq() {
   const [open, setOpen] = useState<number | null>(0)
   return (
-    <div className="divide-y rounded-2xl border bg-card shadow-soft">
+    <div className="glass-panel divide-y rounded-2xl">
       {FAQS.map((f, i) => {
         const isOpen = open === i
         return (

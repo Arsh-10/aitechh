@@ -34,7 +34,7 @@ export const MINI_APPS: MiniApp[] = [
     tagline: 'Turn any material into a tutor, quizzes and spaced repetition.',
     icon: GraduationCap,
     path: '/app/study',
-    status: 'live',
+    status: 'soon',
   },
   {
     slug: 'decision-ai',
@@ -42,7 +42,7 @@ export const MINI_APPS: MiniApp[] = [
     tagline: 'Think through hard choices with a structured process.',
     icon: Scale,
     path: '/app/decision',
-    status: 'live',
+    status: 'soon',
   },
   {
     slug: 'contract-explainer',
@@ -50,6 +50,6 @@ export const MINI_APPS: MiniApp[] = [
     tagline: 'Understand what you sign — plain English, risks, and questions to ask.',
     icon: FileText,
     path: '/app/contract',
-    status: 'live',
+    status: 'soon',
   },
 ]
