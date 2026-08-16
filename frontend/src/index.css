@@ -88,10 +88,18 @@
   }
 
   /* Frosted glass surfaces ─────────────────────────────────── */
+  /* NOTE: the blur value is passed through the --glass-filter custom property
+     on purpose. The production CSS minifier (esbuild) prunes literal-valued
+     vendor-prefix pairs down to `-webkit-backdrop-filter` only, which silently
+     kills the blur in Firefox and other engines that don't support the
+     -webkit- alias. A var()-valued declaration is opaque to the minifier, so
+     BOTH the prefixed and unprefixed declarations survive — this is exactly
+     how Tailwind ships its own backdrop utilities. Don't inline the value. */
   .glass {
     background: hsl(0 0% 100% / 0.7);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    --glass-filter: blur(14px);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
   }
   :root[data-theme='dark'] .glass,
   .dark .glass {
@@ -99,8 +107,9 @@
   }
   .glass-dark {
     background: hsl(258 40% 10% / 0.5);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    --glass-filter: blur(14px);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
   }
 
   /* The signature panel: a frosted pane with an inner top highlight and soft
@@ -108,8 +117,9 @@
      dialogs, the composer, and assistant bubbles. */
   .glass-panel {
     background: hsl(0 0% 100% / 0.62);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    --glass-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: var(--glass-filter);
+    backdrop-filter: var(--glass-filter);
     border: 1px solid hsl(0 0% 100% / 0.55);
     box-shadow:
       inset 0 1px 0 hsl(0 0% 100% / 0.6),
@@ -136,8 +146,9 @@
     .glass-panel,
     .glass-panel-strong,
     .glass-dark {
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
+      /* Override the value; the base rules' var()-based declarations then
+         resolve to none, disabling the blur without re-declaring properties. */
+      --glass-filter: none;
       background: hsl(var(--card));
     }
   }
