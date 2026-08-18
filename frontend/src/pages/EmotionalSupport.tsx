@@ -32,6 +32,7 @@ import { MoodPicker, type Mood } from '@/components/MoodPicker'
 import { Orb } from '@/components/Orb'
 import { SpeakButton } from '@/components/SpeakButton'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { UnderTheHood } from '@/components/UnderTheHood'
 import { TypingDots } from '@/components/TypingDots'
 import { apiGet, apiSend, saveMood, streamChat, wrapSession } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
@@ -306,6 +307,9 @@ export default function EmotionalSupport() {
               />
             </button>
           ))}
+        </div>
+        <div className="px-3 pb-1">
+          <UnderTheHood app="emotional-support" />
         </div>
         <div className="flex items-center gap-2 border-t p-3">
           <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>

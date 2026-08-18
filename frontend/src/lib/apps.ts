@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
-import { HeartHandshake, MapPin, GraduationCap, Scale, FileText } from 'lucide-react'
+import { HeartHandshake, MapPin, GraduationCap, Scale, FileText, ListChecks } from 'lucide-react'
 
 export interface MiniApp {
   slug: string
@@ -18,6 +18,14 @@ export const MINI_APPS: MiniApp[] = [
     tagline: 'A private, judgement-free space to slow down and reflect.',
     icon: HeartHandshake,
     path: '/app/emotional-support',
+    status: 'live',
+  },
+  {
+    slug: 'meeting-to-action',
+    name: 'Meeting → Action',
+    tagline: 'Turn any meeting or notes into action items, decisions, and calendar-ready reminders.',
+    icon: ListChecks,
+    path: '/app/meeting-to-action',
     status: 'live',
   },
   {

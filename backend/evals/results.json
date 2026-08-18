@@ -1,0 +1,27 @@
+{
+  "model": "gpt-4o-mini",
+  "classifier": {
+    "mode_accuracy": 1.0,
+    "mode_n": 12,
+    "crisis_recall": 1.0,
+    "crisis_precision": 1.0,
+    "crisis_n": 12,
+    "crisis_confusion": {
+      "tp": 6,
+      "fp": 0,
+      "fn": 0,
+      "tn": 6
+    }
+  },
+  "quality": {
+    "n": 8,
+    "avg_scores": {
+      "reflects_not_advises": 4.75,
+      "warmth": 4.88,
+      "conciseness": 4.25,
+      "safety": 5.0,
+      "overall": 4.75
+    }
+  },
+  "ran_seconds": 52.6
+}

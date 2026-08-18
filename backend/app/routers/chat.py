@@ -1,14 +1,19 @@
 """Emotional-support chat: streams from OpenAI using the user's own key,
 and persists conversation history in Supabase."""
 import json
+import time
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from openai import OpenAI
 from pydantic import BaseModel, Field
 
+from .. import llm, memory
+from ..config import get_settings
 from ..crypto import decrypt
 from ..deps import current_user
+from ..memory import MemoryExtract
 from ..supabase_client import service_client
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -136,6 +141,31 @@ Given the prior memory profile and the new conversation, return an object with:
 Return ONLY the JSON object, nothing else."""
 
 
+# Extracted after each session into the pgvector memory store.
+MEMORY_EXTRACT_INSTRUCTIONS = (
+    "From this reflection conversation, extract a short list of durable memories "
+    "worth recalling in future sessions. Each memory has a kind "
+    "(person/stressor/helps/goal/theme/event/preference), a concise third-person "
+    "text, and a salience 1-5. Keep only durable facts — skip small talk and "
+    "one-off details. Return at most 6, most salient first."
+)
+
+
+class Classification(BaseModel):
+    mode: Literal[
+        "grief_breakup", "work_stress", "anxiety", "loneliness",
+        "low_mood", "relationship_conflict", "general",
+    ]
+    crisis: bool
+
+
+class SessionWrap(BaseModel):
+    primary_emotion: str
+    takeaway: str
+    memory_summary: str
+    themes: list[str]
+
+
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1)
     conversation_id: str | None = None
@@ -154,7 +184,13 @@ def _load_memory(user_id: str) -> dict:
     return (res.data if (res and res.data) else {"summary": "", "themes": []})
 
 
-def _system_prompt_for(user_id: str, mode: str = "general", crisis: bool = False) -> str:
+def _system_prompt_for(
+    user_id: str,
+    mode: str = "general",
+    crisis: bool = False,
+    client: OpenAI | None = None,
+    query: str = "",
+) -> str:
     """Base prompt, adapted to the detected situation and enriched with memory."""
     parts = [SYSTEM_PROMPT]
 
@@ -166,7 +202,7 @@ def _system_prompt_for(user_id: str, mode: str = "general", crisis: bool = False
     if crisis:
         parts.append("\n" + CRISIS_GUIDANCE)
 
-    # Continuity from memory.
+    # Continuity from the rolling memory profile.
     mem = _load_memory(user_id)
     summary = (mem.get("summary") or "").strip()
     if summary:
@@ -174,32 +210,43 @@ def _system_prompt_for(user_id: str, mode: str = "general", crisis: bool = False
             "\nWhat you remember about this person (use it gently and naturally to show "
             "continuity — do NOT recite it back or list it):\n" + summary
         )
+
+    # Specific memories most relevant to THIS message (pgvector retrieval).
+    if client is not None and query:
+        recalled = memory.format_for_prompt(memory.retrieve(user_id, client, query))
+        if recalled:
+            parts.append(
+                "\nSpecific things you recall that may be relevant right now "
+                "(weave in naturally only if it helps; never list them back):\n" + recalled
+            )
     return "\n".join(parts)
 
 
 def _classify(client: OpenAI, message: str, history: list[dict]) -> dict:
-    """Detect the support mode + crisis flag for the latest message. Cheap & fast;
-    falls back to a safe default if anything goes wrong."""
-    # A little recent context helps disambiguate short messages.
+    """Detect the support mode + crisis flag for the latest message.
+
+    Two safety signals are combined: a strict structured-output classifier and
+    the moderation endpoint. Crisis fires if EITHER flags it (higher recall — we
+    would much rather over-surface help than miss it). Safe default on failure.
+    """
     recent = "\n".join(f"{m['role']}: {m['content']}" for m in history[-4:])
-    try:
-        resp = client.chat.completions.create(
-            model=DEFAULT_MODEL,
-            response_format={"type": "json_object"},
-            temperature=0,
-            max_tokens=30,
-            messages=[
-                {"role": "system", "content": CLASSIFY_INSTRUCTIONS},
-                {"role": "user", "content": f"Recent context:\n{recent}\n\nLatest message:\n{message}"},
-            ],
-        )
-        data = json.loads(resp.choices[0].message.content or "{}")
-    except Exception:
-        return {"mode": "general", "crisis": False}
-    mode = data.get("mode")
-    if mode not in SUPPORT_MODES:
-        mode = "general"
-    return {"mode": mode, "crisis": bool(data.get("crisis"))}
+    mod = llm.moderate(client, message)
+    parsed = llm.parse_structured(
+        client,
+        label="classify",
+        model=get_settings().utility_model,
+        schema=Classification,
+        temperature=0,
+        max_tokens=50,
+        messages=[
+            {"role": "system", "content": CLASSIFY_INSTRUCTIONS},
+            {"role": "user", "content": f"Recent context:\n{recent}\n\nLatest message:\n{message}"},
+        ],
+    )
+    if parsed is None:
+        return {"mode": "general", "crisis": mod["self_harm"]}
+    mode = parsed.mode if parsed.mode in SUPPORT_MODES else "general"
+    return {"mode": mode, "crisis": bool(parsed.crisis) or mod["self_harm"]}
 
 
 def _user_openai_client(user_id: str) -> OpenAI:
@@ -217,7 +264,12 @@ def _user_openai_client(user_id: str) -> OpenAI:
             detail="No OpenAI key on file. Add your key in Settings first.",
         )
     api_key = decrypt(res.data["encrypted_key"])
-    return OpenAI(api_key=api_key)
+    s = get_settings()
+    kwargs: dict = {"api_key": api_key}
+    if s.openai_base_url:
+        # Point at any OpenAI-compatible endpoint (local model, OpenRouter, …).
+        kwargs["base_url"] = s.openai_base_url
+    return OpenAI(**kwargs)
 
 
 def _ensure_conversation(
@@ -271,7 +323,7 @@ async def chat(body: ChatRequest, user=Depends(current_user)):
     mode, crisis = detected["mode"], detected["crisis"]
 
     messages = (
-        [{"role": "system", "content": _system_prompt_for(user.id, mode, crisis)}]
+        [{"role": "system", "content": _system_prompt_for(user.id, mode, crisis, client=client, query=body.message)}]
         + history
         + [{"role": "user", "content": body.message}]
     )
@@ -280,20 +332,33 @@ async def chat(body: ChatRequest, user=Depends(current_user)):
         # First frame carries the conversation id + detected mode/crisis for the client.
         yield f"data: {json.dumps({'conversation_id': conversation_id, 'mode': mode, 'mode_label': MODE_LABELS.get(mode), 'crisis': crisis})}\n\n"
         collected: list[str] = []
+        t0 = time.perf_counter()
+        usage = None
         try:
-            stream = client.chat.completions.create(
-                model=body.model,
-                messages=messages,
-                stream=True,
-                temperature=0.7,
-            )
+            create_kw: dict = {
+                "model": body.model,
+                "messages": messages,
+                "stream": True,
+                "temperature": 0.7,
+            }
+            # usage-in-stream isn't universal across OpenAI-compatible servers,
+            # so only ask for it when hitting OpenAI itself.
+            if not get_settings().openai_base_url:
+                create_kw["stream_options"] = {"include_usage": True}
+            stream = client.chat.completions.create(**create_kw)
             for chunk in stream:
+                if getattr(chunk, "usage", None):
+                    usage = chunk.usage
+                if not chunk.choices:
+                    continue
                 delta = chunk.choices[0].delta.content or ""
                 if delta:
                     collected.append(delta)
                     yield f"data: {json.dumps({'delta': delta})}\n\n"
         except Exception as exc:  # surface OpenAI errors to the client
             yield f"data: {json.dumps({'error': str(exc)})}\n\n"
+        else:
+            llm.record_usage("reply", body.model, usage, (time.perf_counter() - t0) * 1000)
         finally:
             # Safety: when crisis is detected, always surface concrete helplines,
             # regardless of what the model produced.
@@ -338,47 +403,61 @@ async def wrap_session(conversation_id: str, user=Depends(current_user)):
     transcript = "\n".join(f"{m['role']}: {m['content']}" for m in history)
     client = _user_openai_client(user.id)
 
-    try:
-        resp = client.chat.completions.create(
-            model=DEFAULT_MODEL,
-            response_format={"type": "json_object"},
-            temperature=0.3,
-            messages=[
-                {"role": "system", "content": WRAP_INSTRUCTIONS},
-                {
-                    "role": "user",
-                    "content": (
-                        f"PRIOR MEMORY PROFILE:\n{prior.get('summary') or '(none yet)'}\n\n"
-                        f"PRIOR THEMES: {prior.get('themes') or []}\n\n"
-                        f"NEW CONVERSATION:\n{transcript}"
-                    ),
-                },
-            ],
-        )
-        data = json.loads(resp.choices[0].message.content or "{}")
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Could not summarise session: {exc}")
+    wrap = llm.parse_structured(
+        client,
+        label="wrap",
+        model=get_settings().utility_model,
+        schema=SessionWrap,
+        temperature=0.3,
+        messages=[
+            {"role": "system", "content": WRAP_INSTRUCTIONS},
+            {
+                "role": "user",
+                "content": (
+                    f"PRIOR MEMORY PROFILE:\n{prior.get('summary') or '(none yet)'}\n\n"
+                    f"PRIOR THEMES: {prior.get('themes') or []}\n\n"
+                    f"NEW CONVERSATION:\n{transcript}"
+                ),
+            },
+        ],
+    )
+    if wrap is None:
+        raise HTTPException(status_code=502, detail="Could not summarise session.")
 
-    takeaway = (data.get("takeaway") or "").strip() or None
-    emotion = (data.get("primary_emotion") or "").strip().lower() or None
-    summary = (data.get("memory_summary") or "").strip()
-    themes = data.get("themes") or []
-    if isinstance(themes, list):
-        themes = [str(t).strip().lower() for t in themes if str(t).strip()][:8]
-    else:
-        themes = []
+    takeaway = (wrap.takeaway or "").strip() or None
+    emotion = (wrap.primary_emotion or "").strip().lower() or None
+    summary = (wrap.memory_summary or "").strip()
+    themes = [str(t).strip().lower() for t in (wrap.themes or []) if str(t).strip()][:8]
 
     # Persist conversation enrichment.
     sb.table("conversations").update(
         {"takeaway": takeaway, "primary_emotion": emotion}
     ).eq("id", conversation_id).eq("user_id", user.id).execute()
 
-    # Evolve the memory profile.
+    # Evolve the rolling memory profile.
     if summary or themes:
         sb.table("user_memory").upsert(
             {"user_id": user.id, "summary": summary, "themes": themes},
             on_conflict="user_id",
         ).execute()
+
+    # Extract specific, embeddable memories for cross-session recall (pgvector).
+    try:
+        extract = llm.parse_structured(
+            client,
+            label="memory_extract",
+            model=get_settings().utility_model,
+            schema=MemoryExtract,
+            temperature=0.2,
+            messages=[
+                {"role": "system", "content": MEMORY_EXTRACT_INSTRUCTIONS},
+                {"role": "user", "content": transcript},
+            ],
+        )
+        if extract and extract.items:
+            memory.store(user.id, client, extract.items[:6])
+    except Exception:  # memory is best-effort; never fail the wrap on it
+        pass
 
     return WrapResult(takeaway=takeaway, primary_emotion=emotion)
 

@@ -48,5 +48,11 @@ def get_item(user_id: str, item_id: str) -> dict | None:
     return res.data if res else None
 
 
+def update_item(user_id: str, item_id: str, data: dict) -> None:
+    service_client().table("app_items").update({"data": data}).eq("id", item_id).eq(
+        "user_id", user_id
+    ).execute()
+
+
 def delete_item(user_id: str, item_id: str) -> None:
     service_client().table("app_items").delete().eq("id", item_id).eq("user_id", user_id).execute()

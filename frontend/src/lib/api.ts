@@ -49,7 +49,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 
 export async function apiSend<T>(
   path: string,
-  method: 'POST' | 'PUT' | 'DELETE',
+  method: 'POST' | 'PUT' | 'DELETE' | 'PATCH',
   body?: unknown
 ): Promise<T | null> {
   const res = await fetch(`${API_URL}${path}`, {
@@ -317,6 +317,92 @@ export async function streamContractChat(
   onEvent: (e: { conversation_id?: string; delta?: string; error?: string; done?: boolean }) => void
 ): Promise<void> {
   const res = await fetch(`${API_URL}/api/contracts/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok || !res.body) {
+    if (res.status === 401) await handleUnauthorized()
+    throw new Error((await res.json().catch(() => ({}))).detail ?? res.statusText)
+  }
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const parts = buffer.split('\n\n')
+    buffer = parts.pop() ?? ''
+    for (const part of parts) {
+      const line = part.trim()
+      if (!line.startsWith('data:')) continue
+      try {
+        onEvent(JSON.parse(line.slice(5).trim()))
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+}
+
+// ── Meeting → Action ──────────────────────────────────────────
+export interface ActionItem {
+  task: string
+  owner: string
+  due: string // ISO date or ""
+  priority: 'high' | 'medium' | 'low'
+  done?: boolean
+}
+export interface MeetingCard {
+  title: string
+  summary: string
+  action_items: ActionItem[]
+  decisions: string[]
+  questions: string[]
+}
+export interface Meeting {
+  id: string
+  title: string
+  data: MeetingCard | null
+  created_at: string
+  conversation_id: string | null
+}
+export type OpenAction = ActionItem & { meeting_id: string; meeting_title: string }
+
+export const analyzeMeeting = (body: { text: string; title?: string }) =>
+  apiSend<{ id: string; title: string; card: MeetingCard }>('/api/meetings/analyze', 'POST', body)
+export const listMeetings = () => apiGet<Meeting[]>('/api/meetings')
+export const getMeeting = (id: string) =>
+  apiGet<{ meeting: Meeting & { source_text?: string }; messages: { role: 'user' | 'assistant'; content: string }[] }>(
+    `/api/meetings/${id}`
+  )
+export const saveMeeting = (id: string, data: MeetingCard) => apiSend(`/api/meetings/${id}`, 'PATCH', { data })
+export const deleteMeeting = (id: string) => apiSend(`/api/meetings/${id}`, 'DELETE')
+export const openActions = () => apiGet<OpenAction[]>('/api/meetings/open')
+
+/** Download the dated action items as a .ics file (authed fetch → blob → save). Returns event count. */
+export async function downloadMeetingIcs(id: string, filename = 'meeting-actions.ics'): Promise<number> {
+  const res = await fetch(`${API_URL}/api/meetings/${id}/ics`, { headers: { ...(await authHeader()) } })
+  if (!res.ok) return fail(res)
+  const count = Number(res.headers.get('X-Event-Count') || '0')
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+  return count
+}
+
+export async function streamMeetingChat(
+  body: { message: string; conversation_id?: string | null; meeting_id?: string | null },
+  onEvent: (e: { conversation_id?: string; delta?: string; error?: string; done?: boolean }) => void
+): Promise<void> {
+  const res = await fetch(`${API_URL}/api/meetings/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify(body),
