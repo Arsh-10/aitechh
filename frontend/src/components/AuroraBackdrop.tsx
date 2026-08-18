@@ -20,6 +20,8 @@ export function AuroraBackdrop() {
         className="animate-aurora absolute bottom-[-16rem] left-1/4 h-[44rem] w-[44rem] rounded-full opacity-35 blur-3xl"
         style={{ animationDelay: '-11s', background: 'radial-gradient(circle at 50% 50%, hsl(var(--aurora-3) / 0.4), transparent 60%)' }}
       />
+      {/* film grain — subtle, filmic; kills banding on the dark ground */}
+      <div className="app-grain absolute inset-0" />
     </div>
   )
 }

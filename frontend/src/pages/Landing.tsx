@@ -68,11 +68,11 @@ export default function Landing() {
       </header>
 
       {/* ── Hero ───────────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-[hsl(258_42%_9%)] text-white">
+      <section className="relative overflow-hidden text-foreground">
         <Aurora />
         <div className="container relative grid min-h-[92vh] items-center gap-12 pb-20 pt-32 md:grid-cols-[1.1fr_0.9fr] md:pt-28">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-foreground/5 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur">
               <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--gold))]" />
               Open source · your API key · your data
             </span>
@@ -81,7 +81,7 @@ export default function Landing() {
               <br />
               built to <span className="text-gradient animate-shimmer">help</span>.
             </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-white/70">
+            <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
               aitech is a growing collection of open-source AI apps — each built to help with
               something real in your life. You run them with your own key, so your data and
               costs stay yours. A new one ships roughly every week.
@@ -96,14 +96,14 @@ export default function Landing() {
                 size="lg"
                 variant="outline"
                 asChild
-                className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+                className="border-border bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground"
               >
                 <a href={GITHUB_URL} target="_blank" rel="noreferrer">
                   <GitHubIcon className="h-4 w-4" /> Star on GitHub
                 </a>
               </Button>
             </div>
-            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/55">
+            <div className="mt-10 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
               {['No ads, ever', 'Encrypted & private', 'Free to run yourself'].map((t) => (
                 <span key={t} className="inline-flex items-center gap-1.5">
                   <Check className="h-4 w-4 text-[hsl(var(--aurora-3))]" /> {t}
@@ -370,13 +370,13 @@ export default function Landing() {
       </section>
 
       {/* ── Final CTA ──────────────────────────────────────── */}
-      <section className="relative overflow-hidden bg-[hsl(258_42%_9%)] py-24 text-white">
+      <section className="relative overflow-hidden py-24 text-foreground">
         <Aurora />
         <Reveal className="container relative text-center">
           <h2 className="font-display text-4xl font-medium leading-tight md:text-6xl">
             Start where you are.
           </h2>
-          <p className="mx-auto mt-5 max-w-md text-white/70">
+          <p className="mx-auto mt-5 max-w-md text-muted-foreground">
             No pressure, no performance. Just a quiet place to think — whenever you need it.
           </p>
           <Button size="lg" asChild className="mt-9 shadow-glow">

@@ -1,18 +1,17 @@
-import { Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function Logo({ className }: { className?: string }) {
   return (
     <span className={cn('inline-flex items-center gap-2 text-lg font-semibold', className)}>
+      {/* the brand "ball" — a small mono orb, silver on light / pearl on dark */}
       <span
-        className="flex h-7 w-7 items-center justify-center rounded-lg text-white shadow-soft"
+        className="h-7 w-7 rounded-full shadow-soft ring-1 ring-black/5 dark:ring-white/10"
         style={{
           background:
-            'linear-gradient(135deg, hsl(var(--aurora-1)), hsl(var(--aurora-2)) 60%, hsl(var(--gold)))',
+            'radial-gradient(circle at 34% 30%, #fff 0%, hsl(var(--aurora-1)) 46%, hsl(var(--aurora-3)) 100%)',
         }}
-      >
-        <Sparkles className="h-4 w-4" />
-      </span>
+        aria-hidden="true"
+      />
       <span className="font-display tracking-tight">
         aitech<span className="text-primary">.</span>
       </span>

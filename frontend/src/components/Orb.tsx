@@ -27,7 +27,7 @@ export function Orb({ className, size = 220 }: { className?: string; size?: numb
           animationDelay: '-0.4s',
           background:
             'radial-gradient(circle at 34% 28%, #fff 0%, hsl(var(--aurora-1)) 34%, hsl(var(--aurora-2)) 70%, hsl(var(--aurora-3)) 100%)',
-          boxShadow: 'inset 0 -18px 40px hsl(258 60% 30% / 0.45), 0 20px 60px -12px hsl(262 83% 60% / 0.55)',
+          boxShadow: 'inset 0 -18px 40px hsl(0 0% 8% / 0.35), 0 20px 60px -12px hsl(0 0% 0% / 0.4)',
         }}
       />
       {/* soft highlight */}

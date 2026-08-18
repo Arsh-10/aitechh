@@ -4,51 +4,61 @@
 
 @layer base {
   :root {
-    /* Warm, calming "dawn" palette — premium, human, not clinical. */
-    --background: 40 44% 98%;
-    --foreground: 258 30% 14%;
-    --card: 0 0% 100%;
-    --card-foreground: 258 30% 14%;
-    --primary: 262 72% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 264 30% 95%;
-    --secondary-foreground: 258 25% 22%;
-    --muted: 264 24% 95%;
-    --muted-foreground: 258 12% 46%;
-    --accent: 264 60% 95%;
-    --accent-foreground: 262 60% 42%;
-    --destructive: 0 72% 51%;
+    /* ── "Paper" — warm-neutral monochrome (light) ─────────────
+       Not pure grey: a hair of warmth (hue 40) so the neutral reads
+       chosen, not default. Ink on paper. */
+    --background: 40 13% 93%;
+    --foreground: 40 8% 11%;
+    --card: 40 30% 99%;
+    --card-foreground: 40 8% 11%;
+    --primary: 40 8% 13%;
+    --primary-foreground: 40 20% 97%;
+    --secondary: 40 10% 87%;
+    --secondary-foreground: 40 8% 20%;
+    --muted: 40 10% 89%;
+    --muted-foreground: 40 5% 40%;
+    --accent: 40 10% 87%;
+    --accent-foreground: 40 8% 15%;
+    --destructive: 0 62% 47%; /* semantic red kept for errors */
     --destructive-foreground: 0 0% 100%;
-    --border: 264 24% 90%;
-    --input: 264 24% 90%;
-    --ring: 262 72% 60%;
+    --border: 40 8% 83%;
+    --input: 40 8% 83%;
+    --ring: 40 8% 25%;
     --radius: 1rem;
 
-    /* Signature aurora + accent stops */
-    --aurora-1: 262 83% 66%;
-    --aurora-2: 322 80% 68%;
-    --aurora-3: 199 89% 62%;
-    --gold: 35 92% 62%;
+    /* Grayscale "bloom" stops — drive the backdrop, orb, logo, charts.
+       Light -> soft silver so blooms read as gentle shadow, orb as pewter. */
+    --aurora-1: 40 6% 78%;
+    --aurora-2: 40 6% 62%;
+    --aurora-3: 40 6% 46%;
+    --gold: 40 8% 70%;
   }
 
   .dark {
-    --background: 258 30% 8%;
-    --foreground: 40 30% 96%;
-    --card: 258 28% 11%;
-    --card-foreground: 40 30% 96%;
-    --primary: 262 78% 70%;
-    --primary-foreground: 258 40% 10%;
-    --secondary: 258 20% 18%;
-    --secondary-foreground: 40 30% 96%;
-    --muted: 258 20% 16%;
-    --muted-foreground: 258 12% 66%;
-    --accent: 258 24% 22%;
-    --accent-foreground: 40 30% 96%;
-    --destructive: 0 63% 50%;
-    --destructive-foreground: 40 30% 96%;
-    --border: 258 20% 22%;
-    --input: 258 20% 22%;
-    --ring: 262 78% 70%;
+    /* ── "Obsidian" — near-black monochrome (dark) ───────────── */
+    --background: 240 7% 5%;
+    --foreground: 40 12% 95%;
+    --card: 240 6% 9%;
+    --card-foreground: 40 12% 95%;
+    --primary: 40 12% 95%;
+    --primary-foreground: 240 7% 6%;
+    --secondary: 240 5% 16%;
+    --secondary-foreground: 40 12% 95%;
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 63%;
+    --accent: 240 5% 18%;
+    --accent-foreground: 40 12% 95%;
+    --destructive: 0 62% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 5% 20%;
+    --input: 240 5% 20%;
+    --ring: 40 12% 80%;
+
+    /* Dark -> whites, so blooms glow and the orb reads as a bright pearl. */
+    --aurora-1: 0 0% 100%;
+    --aurora-2: 0 0% 90%;
+    --aurora-3: 0 0% 82%;
+    --gold: 0 0% 96%;
   }
 }
 
@@ -74,17 +84,28 @@
     letter-spacing: -0.015em;
   }
 
-  /* Gradient ink for accent words */
+  /* Monochrome "ink" gradient for accent words — ink → soft grey.
+     Reads as a subtle sheen in both themes, never a colour. */
   .text-gradient {
     background-image: linear-gradient(
       100deg,
-      hsl(var(--aurora-1)),
-      hsl(var(--aurora-2)) 55%,
-      hsl(var(--gold))
+      hsl(var(--foreground)),
+      hsl(var(--muted-foreground)) 90%
     );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+  }
+
+  /* Film grain — kills gradient banding on the dark ground and gives the
+     surfaces a filmic, non-flat feel. Applied by the AuroraBackdrop. */
+  .app-grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+    opacity: 0.035;
+  }
+  .dark .app-grain {
+    opacity: 0.06;
   }
 
   /* Frosted glass surfaces ─────────────────────────────────── */
@@ -96,49 +117,49 @@
      BOTH the prefixed and unprefixed declarations survive — this is exactly
      how Tailwind ships its own backdrop utilities. Don't inline the value. */
   .glass {
-    background: hsl(0 0% 100% / 0.7);
+    background: hsl(0 0% 100% / 0.66);
     --glass-filter: blur(14px);
     -webkit-backdrop-filter: var(--glass-filter);
     backdrop-filter: var(--glass-filter);
   }
   :root[data-theme='dark'] .glass,
   .dark .glass {
-    background: hsl(258 40% 10% / 0.6);
+    background: hsl(240 6% 10% / 0.6);
   }
   .glass-dark {
-    background: hsl(258 40% 10% / 0.5);
+    background: hsl(240 6% 9% / 0.5);
     --glass-filter: blur(14px);
     -webkit-backdrop-filter: var(--glass-filter);
     backdrop-filter: var(--glass-filter);
   }
 
   /* The signature panel: a frosted pane with an inner top highlight and soft
-     drop shadow, floating over the aurora backdrop. Used for cards, sidebars,
+     drop shadow, floating over the backdrop. Used for cards, sidebars,
      dialogs, the composer, and assistant bubbles. */
   .glass-panel {
-    background: hsl(0 0% 100% / 0.62);
-    --glass-filter: blur(20px) saturate(150%);
+    background: hsl(0 0% 100% / 0.6);
+    --glass-filter: blur(20px) saturate(120%);
     -webkit-backdrop-filter: var(--glass-filter);
     backdrop-filter: var(--glass-filter);
-    border: 1px solid hsl(0 0% 100% / 0.55);
+    border: 1px solid hsl(0 0% 100% / 0.7);
     box-shadow:
       inset 0 1px 0 hsl(0 0% 100% / 0.6),
-      0 10px 30px -14px hsl(258 45% 25% / 0.35);
+      0 10px 30px -14px hsl(40 10% 20% / 0.3);
   }
   :root[data-theme='dark'] .glass-panel,
   .dark .glass-panel {
-    background: hsl(258 32% 15% / 0.55);
-    border-color: hsl(0 0% 100% / 0.1);
+    background: hsl(240 6% 13% / 0.55);
+    border-color: hsl(0 0% 100% / 0.12);
     box-shadow:
       inset 0 1px 0 hsl(0 0% 100% / 0.08),
-      0 12px 34px -14px hsl(258 60% 4% / 0.6);
+      0 12px 34px -14px hsl(0 0% 0% / 0.7);
   }
   .glass-panel-strong {
-    background: hsl(0 0% 100% / 0.78);
+    background: hsl(0 0% 100% / 0.8);
   }
   :root[data-theme='dark'] .glass-panel-strong,
   .dark .glass-panel-strong {
-    background: hsl(258 32% 15% / 0.72);
+    background: hsl(240 6% 15% / 0.75);
   }
 
   @media (prefers-reduced-transparency: reduce) {

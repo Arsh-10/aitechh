@@ -28,11 +28,7 @@ function Stat({
     <Card>
       <CardContent className="flex items-center gap-3 p-5">
         <span
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-soft"
-          style={{
-            background:
-              'linear-gradient(135deg, hsl(var(--aurora-1)), hsl(var(--aurora-2)) 70%, hsl(var(--gold)))',
-          }}
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft"
         >
           <Icon className="h-5 w-5" />
         </span>
