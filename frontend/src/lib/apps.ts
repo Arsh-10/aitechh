@@ -64,10 +64,10 @@ const PUBLIC_MINI_APPS: MiniApp[] = [
 
 // Merge any private overlay apps. `import.meta.glob` resolves to nothing when
 // the overlay isn't checked out, so the open-source build ships public apps only.
-const privateModules = import.meta.glob<{ apps?: MiniApp[] }>('../private/registry.tsx', {
+const privateModules = import.meta.glob<{ apps?: MiniApp[] }>('../private/registryData.ts', {
   eager: true,
 })
-const PRIVATE_MINI_APPS: MiniApp[] = Object.values(privateModules).flatMap((m) => m.apps ?? [])
+const PRIVATE_MINI_APPS: MiniApp[] = Object.values(privateModules).flatMap((m) => m?.apps ?? [])
 
 // Live apps first, then "coming soon" — keeps live overlay apps grouped with
 // the other live ones regardless of merge order.

@@ -15,7 +15,7 @@ import Preview from './pages/Preview' // TEMP: visual QA route, remove before sh
 const privateRouteModules = import.meta.glob<{
   routes?: { path: string; element: ReactNode }[]
 }>('./private/registry.tsx', { eager: true })
-const privateRoutes = Object.values(privateRouteModules).flatMap((m) => m.routes ?? [])
+const privateRoutes = Object.values(privateRouteModules).flatMap((m) => m?.routes ?? [])
 
 function Protected({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()

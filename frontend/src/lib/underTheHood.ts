@@ -249,12 +249,12 @@ const PUBLIC_UNDER_THE_HOOD: Record<string, AppTech> = {
 // Merge Under-the-hood entries from the private overlay (absent in the open
 // repo, so this resolves to an empty object there).
 const privateModules = import.meta.glob<{ underTheHood?: Record<string, AppTech> }>(
-  '../private/registry.tsx',
+  '../private/registryData.ts',
   { eager: true }
 )
 const PRIVATE_UNDER_THE_HOOD: Record<string, AppTech> = Object.assign(
   {},
-  ...Object.values(privateModules).map((m) => m.underTheHood ?? {})
+  ...Object.values(privateModules).map((m) => m?.underTheHood ?? {})
 )
 
 export const UNDER_THE_HOOD: Record<string, AppTech> = {
