@@ -46,7 +46,7 @@ export type AppTech = {
 const PRIVACY_BYO =
   'You bring your own key, data stays in your own Supabase (self-hostable), and nothing is sold or used to train a model.'
 
-export const UNDER_THE_HOOD: Record<string, AppTech> = {
+const PUBLIC_UNDER_THE_HOOD: Record<string, AppTech> = {
   'emotional-support': {
     name: 'Reflection Companion',
     dataFlow: [
@@ -243,4 +243,21 @@ export const UNDER_THE_HOOD: Record<string, AppTech> = {
     privacy:
       'You bring your own key, meetings live in your own Supabase, dictation happens on-device, and nothing is sold or used to train a model.',
   },
+
+}
+
+// Merge Under-the-hood entries from the private overlay (absent in the open
+// repo, so this resolves to an empty object there).
+const privateModules = import.meta.glob<{ underTheHood?: Record<string, AppTech> }>(
+  '../private/registry.tsx',
+  { eager: true }
+)
+const PRIVATE_UNDER_THE_HOOD: Record<string, AppTech> = Object.assign(
+  {},
+  ...Object.values(privateModules).map((m) => m.underTheHood ?? {})
+)
+
+export const UNDER_THE_HOOD: Record<string, AppTech> = {
+  ...PUBLIC_UNDER_THE_HOOD,
+  ...PRIVATE_UNDER_THE_HOOD,
 }

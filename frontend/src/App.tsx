@@ -11,6 +11,12 @@ import ContractExplainer from './pages/ContractExplainer'
 import MeetingToAction from './pages/MeetingToAction'
 import Preview from './pages/Preview' // TEMP: visual QA route, remove before ship
 
+// Private overlay routes — resolve to nothing unless the overlay is checked out.
+const privateRouteModules = import.meta.glob<{
+  routes?: { path: string; element: ReactNode }[]
+}>('./private/registry.tsx', { eager: true })
+const privateRoutes = Object.values(privateRouteModules).flatMap((m) => m.routes ?? [])
+
 function Protected({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
   if (loading) {
@@ -78,6 +84,9 @@ export default function App() {
           </Protected>
         }
       />
+      {privateRoutes.map((r) => (
+        <Route key={r.path} path={r.path} element={<Protected>{r.element}</Protected>} />
+      ))}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

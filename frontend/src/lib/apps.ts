@@ -10,8 +10,8 @@ export interface MiniApp {
   status: 'live' | 'soon'
 }
 
-// Add one mini-app here each week as it ships.
-export const MINI_APPS: MiniApp[] = [
+// Public mini-apps. Add one here each week as it ships.
+const PUBLIC_MINI_APPS: MiniApp[] = [
   {
     slug: 'emotional-support',
     name: 'Reflection Companion',
@@ -60,4 +60,19 @@ export const MINI_APPS: MiniApp[] = [
     path: '/app/contract',
     status: 'soon',
   },
+]
+
+// Merge any private overlay apps. `import.meta.glob` resolves to nothing when
+// the overlay isn't checked out, so the open-source build ships public apps only.
+const privateModules = import.meta.glob<{ apps?: MiniApp[] }>('../private/registry.tsx', {
+  eager: true,
+})
+const PRIVATE_MINI_APPS: MiniApp[] = Object.values(privateModules).flatMap((m) => m.apps ?? [])
+
+// Live apps first, then "coming soon" — keeps live overlay apps grouped with
+// the other live ones regardless of merge order.
+const ALL_MINI_APPS = [...PUBLIC_MINI_APPS, ...PRIVATE_MINI_APPS]
+export const MINI_APPS: MiniApp[] = [
+  ...ALL_MINI_APPS.filter((a) => a.status === 'live'),
+  ...ALL_MINI_APPS.filter((a) => a.status !== 'live'),
 ]

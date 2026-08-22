@@ -19,6 +19,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Apply private overlay (if configured)
+        env:
+          OVERLAY_REPO: ${{ secrets.OVERLAY_REPO }}
+          OVERLAY_TOKEN: ${{ secrets.OVERLAY_TOKEN }}
+        run: |
+          if [ -z "$OVERLAY_TOKEN" ] || [ -z "$OVERLAY_REPO" ]; then
+            echo "No overlay configured — building public-only."; exit 0
+          fi
+          git clone --depth 1 "https://x-access-token:${OVERLAY_TOKEN}@github.com/${OVERLAY_REPO}.git" _overlay
+          cp -r _overlay/backend/. backend/
+          cp -r _overlay/frontend/. frontend/
+          rm -rf _overlay
+          echo "Overlay applied."
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -49,6 +63,20 @@ jobs:
       id-token: write # required for Workload Identity Federation
     steps:
       - uses: actions/checkout@v4
+
+      - name: Apply private overlay (if configured)
+        env:
+          OVERLAY_REPO: ${{ secrets.OVERLAY_REPO }}
+          OVERLAY_TOKEN: ${{ secrets.OVERLAY_TOKEN }}
+        run: |
+          if [ -z "$OVERLAY_TOKEN" ] || [ -z "$OVERLAY_REPO" ]; then
+            echo "No overlay configured — deploying public-only."; exit 0
+          fi
+          git clone --depth 1 "https://x-access-token:${OVERLAY_TOKEN}@github.com/${OVERLAY_REPO}.git" _overlay
+          cp -r _overlay/backend/. backend/
+          cp -r _overlay/frontend/. frontend/
+          rm -rf _overlay
+          echo "Overlay applied."
 
       - id: auth
         name: Authenticate to Google Cloud (keyless, WIF)

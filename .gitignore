@@ -234,6 +234,12 @@ frontend/node_modules/
 backend/static/
 env.deploy.yaml
 
+# ---- Private overlay apps ----
+# These paths are supplied by a separate PRIVATE repo and merged in at build
+# time. They must never be committed to this public repo.
+backend/app/routers/private/
+frontend/src/private/
+
 # The generic Python 'lib/' rule above is too broad — the FRONTEND has real
 # source under src/lib. Make sure it is tracked.
 !frontend/src/lib/

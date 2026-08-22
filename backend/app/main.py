@@ -39,6 +39,32 @@ app.include_router(contracts.router)
 app.include_router(meetings.router)
 
 
+# ── Private overlay apps (optional) ───────────────────────────
+# Router modules dropped into app/routers/private/ by a private overlay are
+# auto-registered here. That directory is git-ignored and absent from the
+# open-source repo, so the public build runs cleanly without them.
+def _load_private_routers() -> None:
+    import importlib.util
+
+    private_dir = Path(__file__).resolve().parent / "routers" / "private"
+    if not private_dir.is_dir():
+        return
+    for py in sorted(private_dir.glob("*.py")):
+        if py.name.startswith("_"):
+            continue
+        spec = importlib.util.spec_from_file_location(f"app.routers.private.{py.stem}", py)
+        if spec is None or spec.loader is None:
+            continue
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        router = getattr(module, "router", None)
+        if router is not None:
+            app.include_router(router)
+
+
+_load_private_routers()
+
+
 @app.get("/health", tags=["meta"])
 async def health():
     return {"status": "ok", "service": "aitech-api", "version": "0.1.0"}
