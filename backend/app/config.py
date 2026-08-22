@@ -36,6 +36,14 @@ class Settings(BaseSettings):
     # dall-e-3 is broadly available on user keys; swap for gpt-image-1 where enabled.
     image_model: str = "dall-e-3"
 
+    # ── Rasikh billing (private app) ──────────────────────────────────────
+    # When set, Rasikh runs on THIS server-side key (teachers don't bring their
+    # own) and each action debits their prepaid AED wallet. Leave empty to fall
+    # back to bring-your-own-key (no wallet, no charges). Set via Cloud Run env.
+    rasikh_openai_key: str = ""
+    # Comma-separated admin emails allowed to credit teacher wallets in-app.
+    rasikh_admin_emails: str = ""
+
     # ── Feature flags ─────────────────────────────────────────────────────
     # Structured logging of every LLM call (model, tokens, latency, est. cost).
     enable_tracing: bool = True
