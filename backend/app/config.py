@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     utility_model: str = "gpt-4o-mini"
     # Embedding model for the cross-session memory store (1536 dims).
     embedding_model: str = "text-embedding-3-small"
+    # Image model for on-demand diagram/illustration generation (Rasikh figures).
+    # dall-e-3 is broadly available on user keys; swap for gpt-image-1 where enabled.
+    image_model: str = "dall-e-3"
 
     # ── Feature flags ─────────────────────────────────────────────────────
     # Structured logging of every LLM call (model, tokens, latency, est. cost).

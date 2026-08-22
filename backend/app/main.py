@@ -82,7 +82,7 @@ if STATIC_DIR.is_dir():
     async def spa(full_path: str):
         """Serve real static files if they exist, otherwise the SPA index
         (so client-side routes like /app/emotional-support work on refresh)."""
-        root = STATIC_DIR.resolve()
+        root = STATIC_DIR.resolve() 
         candidate = (STATIC_DIR / full_path).resolve()
         # Guard against path traversal outside the static dir.
         if full_path and (candidate == root or root in candidate.parents) and candidate.is_file():
