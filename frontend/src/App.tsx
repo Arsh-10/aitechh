@@ -13,7 +13,7 @@ import Preview from './pages/Preview' // TEMP: visual QA route, remove before sh
 
 // Private overlay routes — resolve to nothing unless the overlay is checked out.
 const privateRouteModules = import.meta.glob<{
-  routes?: { path: string; element: ReactNode }[]
+  routes?: { path: string; element: ReactNode; public?: boolean }[]
 }>('./private/registry.tsx', { eager: true })
 const privateRoutes = Object.values(privateRouteModules).flatMap((m) => m?.routes ?? [])
 
@@ -85,7 +85,7 @@ export default function App() {
         }
       />
       {privateRoutes.map((r) => (
-        <Route key={r.path} path={r.path} element={<Protected>{r.element}</Protected>} />
+        <Route key={r.path} path={r.path} element={r.public ? r.element : <Protected>{r.element}</Protected>} />
       ))}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
