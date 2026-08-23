@@ -10,6 +10,8 @@ robust, and gives the "Under the hood" panel real numbers to show.
 """
 from __future__ import annotations
 
+import contextlib
+import contextvars
 import logging
 import time
 from typing import TypeVar
@@ -34,6 +36,25 @@ _PRICING: dict[str, tuple[float, float]] = {
 _recent: list[dict] = []
 _MAX_RECENT = 50
 
+# Per-request cost meter — contextvar-isolated so concurrent requests never mix.
+_cost_sink: contextvars.ContextVar = contextvars.ContextVar("llm_cost_sink", default=None)
+
+
+class _Meter:
+    def __init__(self) -> None:
+        self.usd = 0.0
+
+
+@contextlib.contextmanager
+def cost_meter():
+    """Sum the estimated USD cost of every LLM call made inside this block."""
+    m = _Meter()
+    token = _cost_sink.set(m)
+    try:
+        yield m
+    finally:
+        _cost_sink.reset(token)
+
 
 def _est_cost(model: str, usage) -> float:
     price = _PRICING.get(model)
@@ -54,6 +75,9 @@ def _record(label: str, model: str, usage, ms: float) -> dict:
         "completion_tokens": getattr(usage, "completion_tokens", None),
         "est_cost_usd": _est_cost(model, usage),
     }
+    sink = _cost_sink.get()
+    if sink is not None:
+        sink.usd += entry["est_cost_usd"]
     if get_settings().enable_tracing:
         log.info("llm.call %s", entry)
         _recent.append(entry)
