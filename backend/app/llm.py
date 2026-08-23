@@ -41,8 +41,18 @@ _cost_sink: contextvars.ContextVar = contextvars.ContextVar("llm_cost_sink", def
 
 
 class _Meter:
+    """Accumulates cost + a per-model token breakdown for one request (for billing audit)."""
     def __init__(self) -> None:
         self.usd = 0.0
+        self.by_model: dict[str, dict] = {}
+
+    def add(self, model: str, usage, usd: float) -> None:
+        self.usd += usd
+        m = self.by_model.setdefault(model, {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "usd": 0.0})
+        m["calls"] += 1
+        m["prompt_tokens"] += getattr(usage, "prompt_tokens", 0) or 0
+        m["completion_tokens"] += getattr(usage, "completion_tokens", 0) or 0
+        m["usd"] = round(m["usd"] + usd, 6)
 
 
 @contextlib.contextmanager
@@ -77,7 +87,7 @@ def _record(label: str, model: str, usage, ms: float) -> dict:
     }
     sink = _cost_sink.get()
     if sink is not None:
-        sink.usd += entry["est_cost_usd"]
+        sink.add(model, usage, entry["est_cost_usd"])
     if get_settings().enable_tracing:
         log.info("llm.call %s", entry)
         _recent.append(entry)
