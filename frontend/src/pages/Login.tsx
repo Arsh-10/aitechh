@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/Logo'
 import { Orb } from '@/components/Orb'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,9 @@ import { useAuth } from '@/context/AuthContext'
 export default function Login() {
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  // where to go after sign-in: back to the page that sent us here (e.g. /app/rasikh), else home
+  const from = (location.state as { from?: string } | null)?.from || '/'
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -26,7 +29,7 @@ export default function Login() {
     try {
       if (mode === 'signin') {
         await signIn(email, password)
-        navigate('/')
+        navigate(from)
       } else {
         await signUp(email, password)
         setNotice(
