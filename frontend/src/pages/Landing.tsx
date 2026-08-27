@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils'
 const GITHUB_URL = 'https://github.com/Arsh-10/aitechh'
 
 export default function Landing() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const appHref = '/app/emotional-support'
 
   return (
@@ -50,9 +50,12 @@ export default function Landing() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             {user ? (
-              <Button size="sm" asChild>
-                <Link to={appHref}>Open app</Link>
-              </Button>
+              <>
+                <Button size="sm" variant="ghost" onClick={signOut}>Log out</Button>
+                <Button size="sm" asChild>
+                  <Link to={appHref}>Open app</Link>
+                </Button>
+              </>
             ) : (
               <>
                 <Button size="sm" variant="ghost" asChild className="hidden sm:inline-flex">
