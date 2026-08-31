@@ -33,8 +33,10 @@ class Settings(BaseSettings):
     # Embedding model for the cross-session memory store (1536 dims).
     embedding_model: str = "text-embedding-3-small"
     # Image model for on-demand diagram/illustration generation (Rasikh figures).
-    # dall-e-3 is broadly available on user keys; swap for gpt-image-1 where enabled.
-    image_model: str = "dall-e-3"
+    # dall-e-2/3 were retired May 2026 (they now error "model does not exist"). gpt-image-1-mini is
+    # the cheapest current model and OpenAI's listed dall-e replacement; it returns b64 and rejects
+    # response_format. (Retires ~Dec 2026 — migrate to gpt-image-2 before then.)
+    image_model: str = "gpt-image-1-mini"
 
     # ── Rasikh billing (private app) ──────────────────────────────────────
     # When set, Rasikh runs on THIS server-side key (teachers don't bring their
