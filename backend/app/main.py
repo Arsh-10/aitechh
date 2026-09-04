@@ -8,6 +8,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -21,6 +22,11 @@ app = FastAPI(
     description="Open-source AI mini-apps. Bring your own OpenAI key.",
     version="0.1.0",
 )
+
+# Compress responses (the JS/CSS bundle is ~920 KB raw → ~250 KB gzipped, so this
+# is the single biggest page-load win). Only kicks in when the client sends
+# Accept-Encoding: gzip and the body is over the threshold.
+app.add_middleware(GZipMiddleware, minimum_size=900)
 
 app.add_middleware(
     CORSMiddleware,
@@ -73,21 +79,39 @@ async def health():
 # ── Serve the built frontend (production only) ────────────────
 # Registered LAST so /api/* and /health always match their handlers first.
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+
+# Assets are content-hashed (index-<hash>.js), so a filename never changes its
+# bytes — cache them hard. index.html is NOT hashed and points at the current
+# hashes, so it must always revalidate or users get stuck on a stale bundle.
+_IMMUTABLE = "public, max-age=31536000, immutable"
+_NO_CACHE = "no-cache"
+
+
+class _CachedStatic(StaticFiles):
+    async def get_response(self, path, scope):
+        resp = await super().get_response(path, scope)
+        resp.headers.setdefault("Cache-Control", _IMMUTABLE)
+        return resp
+
+
 if STATIC_DIR.is_dir():
     ASSETS_DIR = STATIC_DIR / "assets"
     if ASSETS_DIR.is_dir():
-        app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+        app.mount("/assets", _CachedStatic(directory=ASSETS_DIR), name="assets")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def spa(full_path: str):
         """Serve real static files if they exist, otherwise the SPA index
         (so client-side routes like /app/emotional-support work on refresh)."""
-        root = STATIC_DIR.resolve() 
+        root = STATIC_DIR.resolve()
         candidate = (STATIC_DIR / full_path).resolve()
         # Guard against path traversal outside the static dir.
         if full_path and (candidate == root or root in candidate.parents) and candidate.is_file():
-            return FileResponse(candidate)
+            # Hashed files under other folders can cache hard; anything else
+            # (favicon, manifest, robots…) gets a short, revalidating cache.
+            cache = _IMMUTABLE if full_path.startswith("assets/") else "public, max-age=3600"
+            return FileResponse(candidate, headers={"Cache-Control": cache})
         index = STATIC_DIR / "index.html"
         if index.is_file():
-            return FileResponse(index)
+            return FileResponse(index, headers={"Cache-Control": _NO_CACHE})
         raise HTTPException(status_code=404, detail="Not found")
